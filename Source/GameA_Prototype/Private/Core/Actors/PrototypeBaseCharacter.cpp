@@ -456,8 +456,11 @@ void APrototypeBaseCharacter::HandleXPChanged(float DeltaValue, const FGameplayT
 void APrototypeBaseCharacter::OnAttackWeightChangedInternal(const FOnAttributeChangeData& Data)
 {
 	const FGameplayEffectModCallbackData& data = *Data.GEModData;
-	const FGameplayTagContainer& SourceTags = *data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
-	OnAttackWeightChanged(Data.OldValue, SourceTags);
+	if (&data != nullptr)
+	{
+		const FGameplayTagContainer& SourceTags = *data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
+		OnAttackWeightChanged(Data.OldValue, SourceTags);
+	}
 }
 
 void APrototypeBaseCharacter::OnMaxHealthChangedInternal(const FOnAttributeChangeData& Data)
