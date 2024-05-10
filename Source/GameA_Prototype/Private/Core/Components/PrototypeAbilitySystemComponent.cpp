@@ -73,13 +73,24 @@ void UPrototypeAbilitySystemComponent::ReceiveDamage(UPrototypeAbilitySystemComp
 
 bool UPrototypeAbilitySystemComponent::CanApplyAttckWeight(UPrototypeGameplayAbility* Ability, UAbilitySystemComponent* TargetASC) const
 {
-	if (!(TargetASC && Ability)) return false;
+	if (!(TargetASC && Ability))
+	{
+		return false;
+	}
+
+	if (Ability->AttackWeight.Magnitude <= 0)
+	{
+		return true;
+	}
 
 	const UPrototypeAttributeSet* AttributeSet = TargetASC->GetSet<UPrototypeAttributeSet>();
 	
-	if (!AttributeSet) return false;
+	if (!AttributeSet)
+	{
+		return false;
+	}
 
-	if (AttributeSet->GetAttackWeight() + Ability->AttackWeight.Magnitude < 0)
+	if (Ability->AttackWeight.Magnitude > AttributeSet->GetAttackWeight())
 	{
 		return false;
 	}
@@ -131,7 +142,7 @@ bool UPrototypeAbilitySystemComponent::TryApplyAttackWeight(UPrototypeGameplayAb
 		{
 			FActiveGameplayEffectHandle ReturnHandle = asc->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC, asc->GetPredictionKeyForNewAction());
 
-			if (ReturnHandle.WasSuccessfullyApplied())
+			if (ReturnHandle.IsValid() && ReturnHandle.WasSuccessfullyApplied())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Attack weight applied successfully : %s"), *Ability->GetName());
 				return true;
