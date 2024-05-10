@@ -59,6 +59,10 @@ public:
 	FName SocketName = "hand_r";
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	float Radius = 25.0f;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float Distance = 0.0f;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	FVector Rotation = FVector(0.0f, 0.0f, 0.0f);
 };
 
 USTRUCT(BlueprintType, meta = (FullyExpand = true))
