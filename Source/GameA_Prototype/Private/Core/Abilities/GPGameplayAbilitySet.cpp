@@ -100,6 +100,8 @@ void UGPGameplayAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* TargetA
 
 		UPrototypeGameplayAbility* AbilityCDO = AbilityToGrant.Ability->GetDefaultObject<UPrototypeGameplayAbility>();
 
+		if (!AbilityCDO) return;
+
 		APrototypeBaseCharacter* actor = Cast<APrototypeBaseCharacter>(TargetASC->AbilityActorInfo->OwnerActor);
 		UGPInputConfig* config = nullptr;
 		if (actor)
@@ -111,7 +113,14 @@ void UGPGameplayAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* TargetA
 		{
 			TSubclassOf<UPrototypeGameplayAbility> AbilityClass = AbilityCDO->GetClass();
 			const FGameplayTag* inputTag = config->FindGameplayTagForAbility(AbilityClass, true);
-			AbilityCDO->AbilityInputID = *config->FindGameplayTagForAbility(AbilityClass, true);
+			if (inputTag)
+			{
+				AbilityCDO->AbilityInputID = *config->FindGameplayTagForAbility(AbilityClass, true);
+			}
+			else
+			{
+				AbilityCDO->AbilityInputID = AbilityToGrant.InputTag;
+			}
 		}
 		else
 		{
