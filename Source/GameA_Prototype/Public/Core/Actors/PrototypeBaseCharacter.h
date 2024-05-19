@@ -79,7 +79,10 @@ protected:
 	void AddStartupGameplayAbilities();
 	void RemoveCharacterGameplayAbilities();
 	void RemoveCharacterGameplayAbility(const FGameplayAbilitySpecHandle& AbilitySpecHandle);
+
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
 	virtual void InitializeAttributes();
+
 	virtual void InitializeHealth(float health);
 
 	UEnhancedInputLocalPlayerSubsystem* GetInputSubsystem() const;
@@ -235,11 +238,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UPrototypeAbilitySystemComponent> AbilitySystemComponent;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, category = "Abilities")
-	TObjectPtr<UAttributeSet> Attributes;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, category = "Abilities")
-	TSubclassOf<UAttributeSet> DefaultAttributes;
+	//UPROPERTY(BlueprintReadWrite, EditAnywhere, category = "Abilities")
+	//TSubclassOf<UAttributeSet> DefaultAttributes;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, category = "Abilities")
 	TArray<TSubclassOf<UGameplayEffect>> StartupEffects;
@@ -247,6 +247,8 @@ public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	float TurnRateGamepad;
+
+	TObjectPtr<UAttributeSet> Attributes;
 
 	///** Delegate to whom anyone can subscribe to receive this event */
 	//UPROPERTY(BlueprintAssignable, Category = "Interaction")

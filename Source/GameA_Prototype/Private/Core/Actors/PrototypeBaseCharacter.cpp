@@ -43,39 +43,13 @@ APrototypeBaseCharacter::APrototypeBaseCharacter(const class FObjectInitializer&
 		AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 	}
 
-	Attributes = DefaultAttributes.GetDefaultObject();
+	InitializeAttributes();
 }
 
 // Called when the game starts or when spawned
 void APrototypeBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (!IsValid(AbilitySystemComponent)) return;
-
-	UPrototypeAttributeSet* prototypeAttributes = Cast<UPrototypeAttributeSet>(Attributes);
-
-	if (prototypeAttributes)
-	{
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(prototypeAttributes->GetAttackWeightAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnAttackWeightChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(prototypeAttributes->GetMaxHealthAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnMaxHealthChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(prototypeAttributes->GetHealthAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnHealthChangedInternal);
-	}
-
-	UGPPlayerAttributeSet* playerAttributes = Cast<UGPPlayerAttributeSet>(Attributes);
-
-	if (playerAttributes)
-	{
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetStrengthAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnStrengthChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetAgilityAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnAgilityChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetVitalityAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnVitalityChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetIntelligenceAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnIntelligenceChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetDexterityAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnDexterityChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetLuckAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnLuckChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetPrecisionAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnPrecisionChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetReflexAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnReflexChangedInternal);
-		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetXPAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnXPChangedInternal);
-	}
 }
 
 void APrototypeBaseCharacter::Landed(const FHitResult& Hit)
@@ -149,6 +123,69 @@ void APrototypeBaseCharacter::AddStartupGameplayAbilities()
 	bAbilitiesInitialized = true;
 }
 
+void APrototypeBaseCharacter::InitializeAttributes()
+{
+	if (!IsValid(AbilitySystemComponent)) return;
+
+	Attributes = CreateDefaultSubobject<UGPPlayerAttributeSet>(TEXT("GPPlayerAttributeSet"));
+
+	// Log the class of DefaultAttributes
+	//if (DefaultAttributes)
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("DefaultAttributes class: %s"), *DefaultAttributes->GetName());
+
+	//	if (DefaultAttributes->IsChildOf(UGPPlayerAttributeSet::StaticClass()))
+	//	{
+	//		Attributes = NewObject<UGPPlayerAttributeSet>(this, DefaultAttributes);
+	//		//Attributes = CreateDefaultSubobject<UGPPlayerAttributeSet>(TEXT("GPPlayerAttributeSet"));
+	//	}
+	//	else
+	//	{
+	//		Attributes = NewObject<UPrototypeAttributeSet>(this, DefaultAttributes);
+	//		//Attributes = CreateDefaultSubobject<UPrototypeAttributeSet>(TEXT("PrototypeAttributeSet"));
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("DefaultAttributes is null."));
+	//	return;
+	//}	
+	
+	if (Attributes)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Attributes class: %s"), *Attributes->GetClass()->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create Attributes from DefaultAttributes."));
+		return;
+	}
+
+	UPrototypeAttributeSet* prototypeAttributes = Cast<UPrototypeAttributeSet>(Attributes);
+
+	if (prototypeAttributes)
+	{
+		AttackWeightChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(prototypeAttributes->GetAttackWeightAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnAttackWeightChangedInternal);
+		MaxHealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(prototypeAttributes->GetMaxHealthAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnMaxHealthChangedInternal);
+		HealthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(prototypeAttributes->GetHealthAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnHealthChangedInternal);
+	}
+
+	UGPPlayerAttributeSet* playerAttributes = Cast<UGPPlayerAttributeSet>(Attributes);
+
+	if (playerAttributes)
+	{
+		StrengthChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetStrengthAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnStrengthChangedInternal);
+		AgilityChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetAgilityAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnAgilityChangedInternal);
+		VitalityChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetVitalityAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnVitalityChangedInternal);
+		IntelligenceChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetIntelligenceAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnIntelligenceChangedInternal);
+		DexterityChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetDexterityAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnDexterityChangedInternal);
+		LuckChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetLuckAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnLuckChangedInternal);
+		PrecisionChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetPrecisionAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnPrecisionChangedInternal);
+		ReflexChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetReflexAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnReflexChangedInternal);
+		XPChangedDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(playerAttributes->GetXPAttribute()).AddUObject(this, &APrototypeBaseCharacter::OnXPChangedInternal);
+	}
+}
+
 void APrototypeBaseCharacter::AddCharacterAbilityWithInput(TSubclassOf<UPrototypeGameplayAbility> Ability)
 {
 	if (GetLocalRole() != ROLE_Authority || !AbilitySystemComponent) return;
@@ -191,10 +228,6 @@ void APrototypeBaseCharacter::RemoveCharacterGameplayAbilities()
 void APrototypeBaseCharacter::RemoveCharacterGameplayAbility(const FGameplayAbilitySpecHandle& AbilitySpecHandle)
 {
 	AbilitySystemComponent->ClearAbility(AbilitySpecHandle);
-}
-
-void APrototypeBaseCharacter::InitializeAttributes()
-{
 }
 
 void APrototypeBaseCharacter::InitializeHealth(float health)
@@ -466,6 +499,7 @@ void APrototypeBaseCharacter::OnAttackWeightChangedInternal(const FOnAttributeCh
 void APrototypeBaseCharacter::OnMaxHealthChangedInternal(const FOnAttributeChangeData& Data)
 {
 	const FGameplayEffectModCallbackData& data = *Data.GEModData;
+	if (&data == nullptr) return;
 	const FGameplayTagContainer& SourceTags = *data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
 	OnMaxHealthChanged(Data.OldValue, SourceTags);
 }
