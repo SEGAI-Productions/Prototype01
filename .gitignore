@@ -53,3 +53,8 @@ Session.vim
 
 # Visual Studio
 .vs
+.vsconfig
+
+# HTML
+.htm
+.html
