@@ -58,3 +58,6 @@ Session.vim
 # HTML
 .htm
 .html
+
+# Logs
+EditorOpenOrder.log
