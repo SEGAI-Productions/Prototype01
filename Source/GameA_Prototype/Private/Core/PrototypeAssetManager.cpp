@@ -26,7 +26,7 @@ UPrototypeAssetManager& UPrototypeAssetManager::Get()
 	check(GEngine);
 
 	return *Cast<UPrototypeAssetManager>(GEngine->AssetManager);
-	UE_LOG(LogTemp, Warning, TEXT("AssetManager Initialized!"));
+	//UE_LOG(LogTemp, Warning, TEXT("AssetManager Initialized!"));
 
 	//if (UPrototypeAssetManager* Singleton = Cast<UPrototypeAssetManager>(GEngine->AssetManager))
 	//{

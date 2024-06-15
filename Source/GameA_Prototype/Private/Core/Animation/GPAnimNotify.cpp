@@ -48,6 +48,7 @@ void UGPAnimNotify::DetectTrackInformation(USkeletalMeshComponent* MeshComp, UAn
             return;
         }
 
+#if WITH_EDITORONLY_DATA
         UE_LOG(LogTemp, Warning, TEXT("Num Slot Anim Tracks: %d"), Montage->AnimNotifyTracks.Num());
 
         TArray<FAnimNotifyEvent*> AnimNotifyEvents = Montage->AnimNotifyTracks[notify->TrackIndex].Notifies;
@@ -68,5 +69,6 @@ void UGPAnimNotify::DetectTrackInformation(USkeletalMeshComponent* MeshComp, UAn
                 break;
             }
         }
+#endif
     }
 }
