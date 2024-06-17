@@ -8,6 +8,7 @@
 #include "Core/Abilities/GPAbilitySystemGlobals.h"
 #include "Core/Attributes/PrototypeAttributeSet.h"
 #include "Core/Actors/PrototypeBaseCharacter.h"
+#include "BlueprintGameplayTagLibrary.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PrototypeGameplayAbility)
 
@@ -63,4 +64,10 @@ void UPrototypeGameplayAbility::ClearCameraMode()
 FGameplayAbilitySpecHandle UPrototypeGameplayAbility::GetSpecHandle()
 {
 	return GetCurrentAbilitySpecHandle();
+}
+
+bool UPrototypeGameplayAbility::CanActivateGameplayAbility()
+{
+	const FGameplayAbilitySpecHandle Handle = GetSpecHandle();
+	return CanActivateAbility(Handle, CurrentActorInfo);
 }
