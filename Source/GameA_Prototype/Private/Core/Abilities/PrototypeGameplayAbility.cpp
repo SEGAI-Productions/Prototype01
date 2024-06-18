@@ -3,11 +3,11 @@
 
 #include "Core/Abilities/PrototypeGameplayAbility.h"
 #include "AbilitySystemLog.h"
-#include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Core/Abilities/GPAbilitySystemGlobals.h"
 #include "Core/Attributes/PrototypeAttributeSet.h"
 #include "Core/Actors/PrototypeBaseCharacter.h"
+#include "Core/Components/PrototypeAbilitySystemComponent.h"
 #include "BlueprintGameplayTagLibrary.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PrototypeGameplayAbility)
@@ -66,8 +66,21 @@ FGameplayAbilitySpecHandle UPrototypeGameplayAbility::GetSpecHandle()
 	return GetCurrentAbilitySpecHandle();
 }
 
-bool UPrototypeGameplayAbility::CanActivateGameplayAbility()
+bool UPrototypeGameplayAbility::CanActivateGameplayAbility(const AActor* TargetActor)
 {
-	const FGameplayAbilitySpecHandle Handle = GetSpecHandle();
-	return CanActivateAbility(Handle, CurrentActorInfo);
+	bool bCanActivate = false;
+	if (CurrentActorInfo != nullptr)
+	{
+		const FGameplayAbilitySpecHandle Handle = GetSpecHandle();
+		const AActor* OwnerActor = CurrentActorInfo->OwnerActor.Get();
+		UPrototypeAbilitySystemComponent* OwnerASC = (OwnerActor != nullptr) ? OwnerActor->GetComponentByClass<UPrototypeAbilitySystemComponent>() : nullptr;
+
+		bCanActivate = CanActivateAbility(Handle, CurrentActorInfo);
+		if (OwnerASC != nullptr)
+		{
+			bCanActivate = bCanActivate && OwnerASC->CanApplyAttackWeight(this, TargetActor);
+		}
+	}
+
+	return bCanActivate;
 }

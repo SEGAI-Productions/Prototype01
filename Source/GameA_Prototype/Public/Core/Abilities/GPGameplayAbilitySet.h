@@ -99,11 +99,13 @@ public:
 
 	void TakeFromAbilitySystem(UAbilitySystemComponent* TargetASC);
 
-protected:
+public:
 
 	// Handles to the granted abilities.
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FGameplayAbilitySpecHandle> AbilitySpecHandles;
+
+protected:
 
 	// Handles to the granted gameplay effects.
 	UPROPERTY()
@@ -128,7 +130,7 @@ public:
 
 	// Grants the ability set to the specified ability system component.
 	// The returned handles can be used later to take away anything that was granted.
-	UFUNCTION(BlueprintCallable, Category = "Abilities", DisplayName = "GiveToAbilitySystem", meta = (ScriptName = "GiveToAbilitySystem"))
+	UFUNCTION(BlueprintCallable, Category = "Abilities", DisplayName = "GiveToAbilitySystem", BlueprintPure="false", meta = (ScriptName = "GiveToAbilitySystem"))
 	void K2_GiveToAbilitySystem(UAbilitySystemComponent* TargetASC, FGPAbilitySet_GrantedHandles& GrantedHandlesOUT) const;
 
 	void GiveToAbilitySystem(UAbilitySystemComponent* TargetASC, FGPAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject = nullptr) const;

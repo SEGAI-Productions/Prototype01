@@ -49,8 +49,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ability")
 	FGameplayAbilitySpecHandle GetSpecHandle();
 
-	UFUNCTION(BlueprintCallable, Category = "Ability")
-	bool CanActivateGameplayAbility();
+	UFUNCTION(BlueprintPure, Category = "Ability")
+	bool CanActivateGameplayAbility(const AActor* TargetActor = nullptr);
 
 	// Abilities will activate when input is pressed
 	FGameplayTag AbilityInputID;

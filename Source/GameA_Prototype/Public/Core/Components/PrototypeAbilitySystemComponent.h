@@ -30,11 +30,11 @@ public:
 
 	/** Perform a preliminary check if the ability's attack weight can be applied. */
 	UFUNCTION(BlueprintCallable, Category = "Ability")
-	bool CanApplyAttckWeight(UPrototypeGameplayAbility* Ability, UAbilitySystemComponent* TargetASC) const;
+	bool CanApplyAttackWeight(UPrototypeGameplayAbility* Ability, const AActor* TargetActor) const;
 
 	/** Perform a preliminary check if the ability's attack weight can be applied. */
 	UFUNCTION(BlueprintCallable, Category = "Ability")
-	bool TryApplyAttackWeight(UPrototypeGameplayAbility* Ability, UAbilitySystemComponent* TargetASC) const;
+	bool TryApplyAttackWeight(UPrototypeGameplayAbility* Ability, const AActor* TargetActor) const;
 
 protected:
 
