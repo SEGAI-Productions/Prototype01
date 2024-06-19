@@ -62,3 +62,6 @@ Session.vim
 # Logs
 EditorOpenOrder.log
 CookerOpenOrder.log
+
+# Hot Compile
+enc_temp_folder/*

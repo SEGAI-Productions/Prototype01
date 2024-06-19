@@ -142,7 +142,8 @@ bool UPrototypeAbilitySystemComponent::TryApplyAttackWeight(UPrototypeGameplayAb
 			);
 
 		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
-		Spec->SetSetByCallerMagnitude(Ability->AttackWeight.Tag, Ability->AttackWeight.Magnitude);
+		float AppliedMagnitude = -1 * Ability->AttackWeight.Magnitude; // Invert because we want to decrease the player's available attack weight
+		Spec->SetSetByCallerMagnitude(Ability->AttackWeight.Tag, AppliedMagnitude);
 		Spec->SetSetByCallerMagnitude(Ability->AttackDuration.Tag, Ability->AttackDuration.Magnitude);
 
 		if (SpecHandle.Data.IsValid())
