@@ -32,24 +32,24 @@ void UGPAnimNotify::DetectTrackInformation(USkeletalMeshComponent* MeshComp, UAn
     const FAnimNotifyEvent* notify = EventReference.GetNotify();
 
     // Log the trigger time of the NotifyEvent
-    UE_LOG(LogTemp, Warning, TEXT("Trigger Time: %f"), notify->GetTriggerTime());
+    //UE_LOG(LogTemp, Warning, TEXT("Trigger Time: %f"), notify->GetTriggerTime());
 
     UAnimMontage* Montage = Cast<UAnimMontage>(Animation);
 
     if (Montage)
     {
         // Log the class name of the Montage for debugging purposes
-        UE_LOG(LogTemp, Warning, TEXT("Attributes class: %s"), *Montage->GetName());
+        //UE_LOG(LogTemp, Warning, TEXT("Attributes class: %s"), *Montage->GetName());
 
         // Validate that the Montage has SlotAnimTracks
         if (Montage->SlotAnimTracks.Num() == 0)
         {
-            UE_LOG(LogTemp, Warning, TEXT("No SlotAnimTracks found in Montage."));
+            UE_LOG(LogTemp, Warning, TEXT("No Slot Anim Tracks found in Montage."));
             return;
         }
 
 #if WITH_EDITORONLY_DATA
-        UE_LOG(LogTemp, Warning, TEXT("Num Slot Anim Tracks: %d"), Montage->AnimNotifyTracks.Num());
+        //UE_LOG(LogTemp, Warning, TEXT("Num Slot Anim Tracks: %d"), Montage->AnimNotifyTracks.Num());
 
         TArray<FAnimNotifyEvent*> AnimNotifyEvents = Montage->AnimNotifyTracks[notify->TrackIndex].Notifies;
 
