@@ -6,7 +6,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "CooldownSubsystem.generated.h"
 
-GAMEA_PROTOTYPE_API DECLARE_LOG_CATEGORY_EXTERN(LogCooldown, Display, All);
+GAMEA_PROTOTYPE_API DECLARE_LOG_CATEGORY_EXTERN(LogCooldown, Log, All);
 
 USTRUCT()
 struct FCooldownEntry

@@ -5,6 +5,8 @@
 
 DEFINE_LOG_CATEGORY(LogCooldown);
 
+#define CD_LOG_DISP_TIME 5.f
+
 void UCooldownSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
   UE_LOG(LogCooldown, Log, TEXT("CooldownSubsystem Initialized"), *GetName());
@@ -31,15 +33,23 @@ void UCooldownSubsystem::ApplyCooldown(TSubclassOf<class UObject> CooldownClass,
   float CurrentTime = World->GetTimeSeconds();
   bool bFound = false;
   TWeakObjectPtr<AActor> OwnerWeakPtr = CooldownOwner;
-  FCooldownEntryContainer Container = PerActorCooldowns.FindOrAdd(OwnerWeakPtr);
-  for (FCooldownEntry Entry : Container.CooldownList)
+  FCooldownEntryContainer& Container = PerActorCooldowns.FindOrAdd(OwnerWeakPtr);
+  for (FCooldownEntry& Entry : Container.CooldownList)
   {
     if (Entry.CooldownClass == CooldownClass)
     {
+      bFound = true;
       Entry.CooldownDuration = CooldownLength;
       Entry.GameTimeSecondsWhenApplied = CurrentTime;
       Entry.GameTimeSecondsWhenComplete = CurrentTime + CooldownLength;
-      bFound = true;
+      
+      FString DisplayStr = FString::Printf(TEXT("Cooldown Applied: %s to %s for %f"), *CooldownClass->GetName(), *CooldownOwner->GetName(), CooldownLength);
+      UE_LOG(LogCooldown, Log, TEXT("%s"), *DisplayStr, *GetName());
+      if (GEngine)
+      {
+        GEngine->AddOnScreenDebugMessage(INDEX_NONE, CD_LOG_DISP_TIME, FColor::Orange, DisplayStr);
+      }
+      
       break;
     }
   }
@@ -52,8 +62,15 @@ void UCooldownSubsystem::ApplyCooldown(TSubclassOf<class UObject> CooldownClass,
     NewEntry.CooldownDuration = CooldownLength;
     NewEntry.GameTimeSecondsWhenApplied = CurrentTime;
     NewEntry.GameTimeSecondsWhenComplete = CurrentTime + CooldownLength;
-
+        
     Container.CooldownList.Add(NewEntry);
+
+    FString DisplayStr = FString::Printf(TEXT("Cooldown Applied: %s to %s for %f"), *CooldownClass->GetName(), *CooldownOwner->GetName(), CooldownLength);
+    UE_LOG(LogCooldown, Log, TEXT("%s"), *DisplayStr, *GetName());
+    if (GEngine)
+    {
+      GEngine->AddOnScreenDebugMessage(INDEX_NONE, CD_LOG_DISP_TIME, FColor::Orange, DisplayStr);
+    }
   }
 }
 
@@ -69,11 +86,19 @@ void UCooldownSubsystem::ApplyGlobalCooldown(TSubclassOf<class UObject> Cooldown
 
   float CurrentTime = World->GetTimeSeconds();
 
-  FCooldownEntry Entry = GlobalCooldowns.FindOrAdd(CooldownClass);
+  FCooldownEntry& Entry = GlobalCooldowns.FindOrAdd(CooldownClass);
+  Entry.CooldownClass = CooldownClass;
   Entry.CooldownOwner = CooldownOwner;
   Entry.CooldownDuration = CooldownLength;
   Entry.GameTimeSecondsWhenApplied = CurrentTime;
   Entry.GameTimeSecondsWhenComplete = CurrentTime + CooldownLength;
+
+  FString DisplayStr = FString::Printf(TEXT("Global Cooldown Applied: %s by %s for %f"), *CooldownClass->GetName(), *CooldownOwner->GetName(), CooldownLength);
+  UE_LOG(LogCooldown, Log, TEXT("%s"), *DisplayStr, *GetName());
+  if (GEngine)
+  {    
+    GEngine->AddOnScreenDebugMessage(INDEX_NONE, CD_LOG_DISP_TIME, FColor::Orange, DisplayStr);
+  }
 }
 
 bool UCooldownSubsystem::IsOnCooldown(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner)
