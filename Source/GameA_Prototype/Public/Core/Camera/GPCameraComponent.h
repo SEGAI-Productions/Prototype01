@@ -40,6 +40,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraMode, AActor* NewFocusObject);
 
+	UFUNCTION(BlueprintCallable)
+	void FocusSocketByName(TSubclassOf<UGPCameraMode> CameraMode, FName FocusSocket);
+
 	// Returns the target actor that the camera is looking at.
 	virtual AActor* GetTargetActor() const { return GetOwner(); }
 

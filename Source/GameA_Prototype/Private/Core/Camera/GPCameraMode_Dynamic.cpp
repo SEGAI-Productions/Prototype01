@@ -30,12 +30,13 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 	{
 		offset = FocusObject->GetActorLocation() - PivotLocation;
 	}
-	else if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
+	
+	if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
 	{
 		// Height adjustments for characters to account for crouching.
 		if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
 		{
-			offset = TargetCharacter->GetMesh()->GetSocketLocation("hand_l_Socket") - PivotLocation;
+			offset = TargetCharacter->GetMesh()->GetSocketLocation(FocusSocketName) - PivotLocation;
 		}
 	}
 

@@ -94,6 +94,11 @@ void UGPCameraMode::SetFocusObject(AActor* NewFocusObject)
 	}
 }
 
+void UGPCameraMode::FocusSocketByName(FName FocusSocket)
+{
+	FocusSocketName = FocusSocket;
+}
+
 void UGPCameraMode::SetBlendWeight(float Weight)
 {
 	BlendWeight = FMath::Clamp(Weight, 0.0f, 1.0f);
@@ -479,4 +484,11 @@ void UGPCameraModeStack::SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeCla
 	UGPCameraMode* cameraMode = GetCameraModeInstance(CameraModeClass);
 
 	cameraMode->SetFocusObject(NewFocusObject);
+}
+
+void UGPCameraModeStack::FocusSocketByName(TSubclassOf<UGPCameraMode> CameraModeClass, FName FocusSocket)
+{
+	UGPCameraMode* cameraMode = GetCameraModeInstance(CameraModeClass);
+
+	cameraMode->FocusSocketByName(FocusSocket);
 }

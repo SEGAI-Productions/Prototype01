@@ -88,6 +88,7 @@ public:
 	void UpdateCameraMode(float DeltaTime);
 
 	void SetFocusObject(AActor* NewFocusObject);
+	void FocusSocketByName(FName FocusSocket);
 	float GetBlendTime() const { return BlendTime; }
 	float GetBlendWeight() const { return BlendWeight; }
 	void SetBlendWeight(float Weight);
@@ -147,6 +148,7 @@ protected:
 	float BlendWeight;
 
 	AActor* FocusObject;
+	FName FocusSocketName;
 
 protected:
 	/** If true, skips all interpolation and puts camera in ideal location.  Automatically set to false next frame. */
@@ -183,6 +185,7 @@ public:
 	// Gets the tag associated with the top layer and the blend weight of it
 	void GetBlendInfo(float& OutWeightOfTopLayer, FGameplayTag& OutTagOfTopLayer) const;
 	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeClass, AActor* NewFocusObject);
+	void FocusSocketByName(TSubclassOf<UGPCameraMode> CameraMode, FName FocusSocket);
 
 protected:
 

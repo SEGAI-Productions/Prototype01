@@ -51,6 +51,11 @@ void UGPCameraComponent::SetFocusObject(TSubclassOf<UGPCameraMode> CameraMode, A
 	if (CameraMode) CameraModeStack->SetFocusObject(CameraMode, NewFocusObject);
 }
 
+void UGPCameraComponent::FocusSocketByName(TSubclassOf<UGPCameraMode> CameraMode, FName FocusSocket)
+{
+	if (CameraMode) CameraModeStack->FocusSocketByName(CameraMode, FocusSocket);
+}
+
 void UGPCameraComponent::OnRegister()
 {
 	Super::OnRegister();
