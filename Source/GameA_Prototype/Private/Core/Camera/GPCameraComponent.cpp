@@ -46,6 +46,11 @@ void UGPCameraComponent::SetCameraMode(TSubclassOf<UGPCameraMode> CameraMode)
 	if (CameraMode) CameraModeStack->PushCameraMode(CameraMode);
 }
 
+void UGPCameraComponent::SetFocusObject(TSubclassOf<UGPCameraMode> CameraMode, AActor* NewFocusObject)
+{
+	if (CameraMode) CameraModeStack->SetFocusObject(CameraMode, NewFocusObject);
+}
+
 void UGPCameraComponent::OnRegister()
 {
 	Super::OnRegister();

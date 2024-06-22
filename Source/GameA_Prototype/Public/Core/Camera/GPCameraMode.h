@@ -4,12 +4,12 @@
 
 #include "Engine/World.h"
 #include "GameplayTagContainer.h"
-
 #include "GPCameraMode.generated.h"
 
 class AActor;
 class UCanvas;
 class UGPCameraComponent;
+class USkeletalMeshSocket;
 
 #define GP_CAMERA_DEFAULT_FOV		(80.0f)
 #define GP_CAMERA_DEFAULT_PITCH_MIN	(-89.0f)
@@ -87,6 +87,7 @@ public:
 
 	void UpdateCameraMode(float DeltaTime);
 
+	void SetFocusObject(AActor* NewFocusObject);
 	float GetBlendTime() const { return BlendTime; }
 	float GetBlendWeight() const { return BlendWeight; }
 	void SetBlendWeight(float Weight);
@@ -145,6 +146,8 @@ protected:
 	// Blend weight calculated using the blend alpha and function.
 	float BlendWeight;
 
+	AActor* FocusObject;
+
 protected:
 	/** If true, skips all interpolation and puts camera in ideal location.  Automatically set to false next frame. */
 	UPROPERTY(transient)
@@ -179,6 +182,7 @@ public:
 
 	// Gets the tag associated with the top layer and the blend weight of it
 	void GetBlendInfo(float& OutWeightOfTopLayer, FGameplayTag& OutTagOfTopLayer) const;
+	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeClass, AActor* NewFocusObject);
 
 protected:
 

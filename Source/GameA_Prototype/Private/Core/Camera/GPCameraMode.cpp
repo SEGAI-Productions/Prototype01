@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/Canvas.h"
 #include "GameFramework/Character.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "Core/Camera/GPCameraComponent.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GPCameraMode)
@@ -83,6 +84,14 @@ void UGPCameraMode::UpdateCameraMode(float DeltaTime)
 {
 	UpdateView(DeltaTime);
 	UpdateBlending(DeltaTime);
+}
+
+void UGPCameraMode::SetFocusObject(AActor* NewFocusObject)
+{
+	if (NewFocusObject)
+	{
+		FocusObject = NewFocusObject;
+	}
 }
 
 void UGPCameraMode::SetBlendWeight(float Weight)
@@ -463,4 +472,11 @@ void UGPCameraModeStack::GetBlendInfo(float& OutWeightOfTopLayer, FGameplayTag& 
 		OutWeightOfTopLayer = TopEntry->GetBlendWeight();
 		OutTagOfTopLayer = TopEntry->GetCameraTypeTag();
 	}
+}
+
+void UGPCameraModeStack::SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeClass, AActor* NewFocusObject)
+{
+	UGPCameraMode* cameraMode = GetCameraModeInstance(CameraModeClass);
+
+	cameraMode->SetFocusObject(NewFocusObject);
 }

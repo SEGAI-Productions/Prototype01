@@ -20,12 +20,30 @@ UGPCameraMode_Dynamic::UGPCameraMode_Dynamic()
 
 void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 {
+	const AActor* TargetActor = GetTargetActor();
+	check(TargetActor);
+
+	FVector offset;
+	FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
+
+	if (FocusObject)
+	{
+		offset = FocusObject->GetActorLocation() - PivotLocation;
+	}
+	else if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
+	{
+		// Height adjustments for characters to account for crouching.
+		if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
+		{
+			offset = TargetCharacter->GetMesh()->GetSocketLocation("hand_l_Socket") - PivotLocation;
+		}
+	}
+
+
 	UpdateForTarget(DeltaTime);
 	UpdateCrouchOffset(DeltaTime);
 
-	FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
 	FRotator PivotRotation = GetPivotRotation();
-
 	PivotRotation.Pitch = FMath::ClampAngle(PivotRotation.Pitch, ViewPitchMin, ViewPitchMax);
 
 	View.Location = PivotLocation;
@@ -39,7 +57,7 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 		if (TargetOffsetCurve)
 		{
 			const FVector TargetOffset = TargetOffsetCurve->GetVectorValue(PivotRotation.Pitch);
-			View.Location = PivotLocation + PivotRotation.RotateVector(TargetOffset);
+			View.Location = PivotLocation + PivotRotation.RotateVector(TargetOffset) + offset;
 		}
 	}
 	else
@@ -49,6 +67,8 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 		TargetOffset.X = TargetOffsetX.GetRichCurveConst()->Eval(PivotRotation.Pitch);
 		TargetOffset.Y = TargetOffsetY.GetRichCurveConst()->Eval(PivotRotation.Pitch);
 		TargetOffset.Z = TargetOffsetZ.GetRichCurveConst()->Eval(PivotRotation.Pitch);
+
+		UE_LOG(LogTemp, Warning, TEXT("x curve %f : %f"), PivotRotation.Pitch, TargetOffset.X);
 
 		View.Location = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 	}
