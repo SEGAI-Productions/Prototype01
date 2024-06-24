@@ -9,6 +9,7 @@
 #include "GameFramework/CameraBlockingVolume.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Math/RotationMatrix.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GPCameraMode_Dynamic)
@@ -16,49 +17,80 @@
 UGPCameraMode_Dynamic::UGPCameraMode_Dynamic()
 {
 	TargetOffsetCurve = nullptr;
+	FocusOffsetCurve = nullptr;
 }
 
 void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 {
+	// Get the target actor and ensure it's valid.
 	const AActor* TargetActor = GetTargetActor();
 	check(TargetActor);
 
-	FVector offset;
+	// Get the current pivot rotation and location.
+	FRotator PivotRotation = GetPivotRotation();
 	FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
 
-	if (FocusObject)
-	{
-		offset = FocusObject->GetActorLocation() - PivotLocation;
-	}
-	
-	if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
-	{
-		// Height adjustments for characters to account for crouching.
-		if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
-		{
-			offset = TargetCharacter->GetMesh()->GetSocketLocation(FocusSocketName) - PivotLocation;
-		}
-	}
-
-
+	// Update target and crouch offsets.
 	UpdateForTarget(DeltaTime);
 	UpdateCrouchOffset(DeltaTime);
 
-	FRotator PivotRotation = GetPivotRotation();
+	// Clamp the pitch of the pivot rotation within specified limits.
 	PivotRotation.Pitch = FMath::ClampAngle(PivotRotation.Pitch, ViewPitchMin, ViewPitchMax);
 
+	// Set initial view properties.
 	View.Location = PivotLocation;
 	View.Rotation = PivotRotation;
-	View.ControlRotation = View.Rotation;
+	View.ControlRotation = PivotRotation;
 	View.FieldOfView = FieldOfView;
+	FVector FocusLocation = View.Location;
 
-	// Apply Dynamic offset using pitch.
+	// Determine the focus location based on the focus actor or the target actor.
+	if (FocusActor)
+	{
+		// If there is a focus actor, set the focus location to its position.
+		FocusLocation = FocusActor->GetActorLocation();
+	}
+	else if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
+	{
+		// If the target actor is a pawn, get its focus location from a socket if it's a character.
+		if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
+		{
+			if (TargetCharacter->GetMesh()->DoesSocketExist(FocusSocketName))
+			{
+				FocusLocation = TargetCharacter->GetMesh()->GetSocketLocation(FocusSocketName);
+			}
+			else
+			{
+				FocusLocation = PivotLocation;
+			}
+		}
+	}
+
+	// Initialize the last updated focus location if it's zero.
+	if (LastUpdatedFocusLocation == FVector::ZeroVector)
+	{
+		LastUpdatedFocusLocation = FocusLocation;
+	}
+
+	// If runtime float curves are not used, update the camera location based on focus and target offsets.
 	if (!bUseRuntimeFloatCurves)
 	{
+		FVector Offset = FVector::Zero();
+
+		// Apply Dynamic offset using DeltaTime.
+		if (FocusOffsetCurve)
+		{
+			FVector FocusOffset = FocusOffsetCurve->GetVectorValue(DeltaTime);
+			Offset = FocusOffset;
+			View.Location = Offset;
+		}
+
+		// Apply Thirdperson offset using pitch.
 		if (TargetOffsetCurve)
 		{
-			const FVector TargetOffset = TargetOffsetCurve->GetVectorValue(PivotRotation.Pitch);
-			View.Location = PivotLocation + PivotRotation.RotateVector(TargetOffset) + offset;
+			Offset += TargetOffsetCurve->GetVectorValue(PivotRotation.Pitch);
+			const FVector TargetOffset = Offset;
+			View.Location = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 		}
 	}
 	else
@@ -69,10 +101,17 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 		TargetOffset.Y = TargetOffsetY.GetRichCurveConst()->Eval(PivotRotation.Pitch);
 		TargetOffset.Z = TargetOffsetZ.GetRichCurveConst()->Eval(PivotRotation.Pitch);
 
-		UE_LOG(LogTemp, Warning, TEXT("x curve %f : %f"), PivotRotation.Pitch, TargetOffset.X);
-
 		View.Location = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 	}
+
+	// Update the last known focus location
+	LastUpdatedFocusLocation = FocusLocation;
+
+	// Calculate the rotation vector and set the view rotation accordingly
+	FVector RotationVector = FocusLocation - View.Location;
+	FRotator ViewRotation = RotationVector.Rotation();
+	ViewRotation.Pitch = 0.0f;
+	View.Rotation = ViewRotation;
 
 	// Adjust final desired camera location to prevent any penetration
 	UpdatePreventPenetration(DeltaTime);

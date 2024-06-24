@@ -37,6 +37,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Dynamic", Meta = (EditCondition = "!bUseRuntimeFloatCurves"))
 	TObjectPtr<const UCurveVector> TargetOffsetCurve;
 
+	// Curve that defines local-space offsets from the target using the view pitch to evaluate the curve.
+	UPROPERTY(EditDefaultsOnly, Category = "Dynamic", Meta = (EditCondition = "!bUseRuntimeFloatCurves"))
+	TObjectPtr<const UCurveVector> FocusOffsetCurve;
+
 	// UE-103986: Live editing of RuntimeFloatCurves during PIE does not work (unlike curve assets).
 	// Once that is resolved this will become the default and TargetOffsetCurve will be removed.
 	UPROPERTY(EditDefaultsOnly, Category = "Dynamic")
@@ -108,5 +112,5 @@ protected:
 	float CrouchOffsetBlendPct = 1.0f;
 	FVector CurrentCrouchOffset = FVector::ZeroVector;
 
-	
+	FVector LastUpdatedFocusLocation = FVector::ZeroVector;
 };

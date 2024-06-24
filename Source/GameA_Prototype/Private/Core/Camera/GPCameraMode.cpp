@@ -90,7 +90,7 @@ void UGPCameraMode::SetFocusObject(AActor* NewFocusObject)
 {
 	if (NewFocusObject)
 	{
-		FocusObject = NewFocusObject;
+		FocusActor = NewFocusObject;
 	}
 }
 
