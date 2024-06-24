@@ -4,6 +4,7 @@
 
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
+#include "Curves/CurveVector.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Core/Camera/GPCameraMode.h"
@@ -49,6 +50,11 @@ void UGPCameraComponent::SetCameraMode(TSubclassOf<UGPCameraMode> CameraMode)
 void UGPCameraComponent::SetFocusObject(TSubclassOf<UGPCameraMode> CameraMode, AActor* NewFocusObject)
 {
 	if (CameraMode) CameraModeStack->SetFocusObject(CameraMode, NewFocusObject);
+}
+
+void UGPCameraComponent::SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraMode, UCurveVector* DynamicOffset)
+{
+	if (CameraMode) CameraModeStack->SetDynamicOffsetCurve(CameraMode, DynamicOffset);
 }
 
 void UGPCameraComponent::FocusSocketByName(TSubclassOf<UGPCameraMode> CameraMode, FName FocusSocket)

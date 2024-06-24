@@ -21,6 +21,8 @@ public:
 
 	UGPCameraMode_Dynamic();
 
+	void SetDynamicOffsetCurve(TObjectPtr<const UCurveVector> DynamicOffset);
+
 protected:
 
 	virtual void UpdateView(float DeltaTime) override;
@@ -28,7 +30,6 @@ protected:
 	void UpdateForTarget(float DeltaTime);
 	void UpdatePreventPenetration(float DeltaTime);
 	void PreventCameraPenetration(class AActor const& ViewTarget, FVector const& SafeLoc, FVector& CameraLoc, float const& DeltaTime, float& DistBlockedPct, bool bSingleRayOnly);
-
 	virtual void DrawDebug(UCanvas* Canvas) const override;
 
 protected:
@@ -39,7 +40,7 @@ protected:
 
 	// Curve that defines local-space offsets from the target using the view pitch to evaluate the curve.
 	UPROPERTY(EditDefaultsOnly, Category = "Dynamic", Meta = (EditCondition = "!bUseRuntimeFloatCurves"))
-	TObjectPtr<const UCurveVector> FocusOffsetCurve;
+	TObjectPtr<const UCurveVector> DynamicOffsetCurve;
 
 	// UE-103986: Live editing of RuntimeFloatCurves during PIE does not work (unlike curve assets).
 	// Once that is resolved this will become the default and TargetOffsetCurve will be removed.

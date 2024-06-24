@@ -41,6 +41,9 @@ public:
 	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraMode, AActor* NewFocusObject);
 
 	UFUNCTION(BlueprintCallable)
+	void SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraMode, UCurveVector* DynamicOffset);
+
+	UFUNCTION(BlueprintCallable)
 	void FocusSocketByName(TSubclassOf<UGPCameraMode> CameraMode, FName FocusSocket);
 
 	// Returns the target actor that the camera is looking at.

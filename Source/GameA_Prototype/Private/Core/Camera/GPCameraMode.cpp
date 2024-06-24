@@ -3,6 +3,8 @@
 
 #include "Core/Camera/GPCameraMode.h"
 
+#include "Curves/CurveVector.h"
+#include "Core/Camera/GPCameraMode_Dynamic.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/Canvas.h"
 #include "GameFramework/Character.h"
@@ -483,7 +485,26 @@ void UGPCameraModeStack::SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeCla
 {
 	UGPCameraMode* cameraMode = GetCameraModeInstance(CameraModeClass);
 
-	cameraMode->SetFocusObject(NewFocusObject);
+	if (cameraMode)
+	{
+		cameraMode->SetFocusObject(NewFocusObject);
+	}
+}
+
+void UGPCameraModeStack::SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraModeClass, TObjectPtr<UCurveVector> DynamicOffset)
+{
+	UGPCameraMode* CameraMode = GetCameraModeInstance(CameraModeClass);
+
+	if (CameraMode)
+	{
+		if (UGPCameraMode_Dynamic* DynamicCameraMode = Cast<UGPCameraMode_Dynamic>(CameraMode))
+		{
+			if (DynamicOffset)
+			{
+				DynamicCameraMode->SetDynamicOffsetCurve(DynamicOffset);
+			}
+		}
+	}
 }
 
 void UGPCameraModeStack::FocusSocketByName(TSubclassOf<UGPCameraMode> CameraModeClass, FName FocusSocket)

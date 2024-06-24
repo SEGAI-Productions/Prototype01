@@ -8,6 +8,7 @@
 
 class AActor;
 class UCanvas;
+class UCurveVector;
 class UGPCameraComponent;
 class USkeletalMeshSocket;
 
@@ -185,6 +186,7 @@ public:
 	// Gets the tag associated with the top layer and the blend weight of it
 	void GetBlendInfo(float& OutWeightOfTopLayer, FGameplayTag& OutTagOfTopLayer) const;
 	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeClass, AActor* NewFocusObject);
+	void SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraMode, TObjectPtr<UCurveVector> DynamicOffset);
 	void FocusSocketByName(TSubclassOf<UGPCameraMode> CameraMode, FName FocusSocket);
 
 protected:

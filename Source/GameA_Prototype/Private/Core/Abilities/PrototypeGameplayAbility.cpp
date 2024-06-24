@@ -2,14 +2,17 @@
 
 
 #include "Core/Abilities/PrototypeGameplayAbility.h"
+
 #include "AbilitySystemLog.h"
+#include "Curves/CurveVector.h"
 #include "AbilitySystemGlobals.h"
+#include "BlueprintGameplayTagLibrary.h"
+#include "Core/Camera/GPCameraComponent.h"
+#include "Core/Subsystems/CooldownSubsystem.h"
+#include "Core/Actors/PrototypeBaseCharacter.h"
 #include "Core/Abilities/GPAbilitySystemGlobals.h"
 #include "Core/Attributes/PrototypeAttributeSet.h"
-#include "Core/Actors/PrototypeBaseCharacter.h"
 #include "Core/Components/PrototypeAbilitySystemComponent.h"
-#include "BlueprintGameplayTagLibrary.h"
-#include "Core/Subsystems/CooldownSubsystem.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PrototypeGameplayAbility)
 
@@ -60,6 +63,27 @@ void UPrototypeGameplayAbility::ClearCameraMode()
 
 		ActiveCameraMode = nullptr;
 	}
+}
+
+void UPrototypeGameplayAbility::SetDynamicOffsetCurve(UCurveVector* DynamicOffset)
+{
+	if (UGPCameraComponent* CameraComponent = GetOwnerCameraComponent().Get())
+	{
+		CameraComponent->SetDynamicOffsetCurve(GetActiveCameraMode(), DynamicOffset);
+	}
+}
+
+void UPrototypeGameplayAbility::FocusActor(AActor* InFocusActor)
+{
+	if (UGPCameraComponent* CameraComponent = GetOwnerCameraComponent().Get())
+	{
+		CameraComponent->SetFocusObject(GetActiveCameraMode(), InFocusActor);
+	}
+}
+
+TSubclassOf<UGPCameraMode> UPrototypeGameplayAbility::GetActiveCameraMode()
+{
+	return ActiveCameraMode;
 }
 
 FGameplayAbilitySpecHandle UPrototypeGameplayAbility::GetSpecHandle()
@@ -125,4 +149,17 @@ void UPrototypeGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle H
 			CooldownSubsystem->ApplyCooldown(GetClass(), OwnerActor, CooldownDuration);
 		}
 	}
+}
+
+TObjectPtr<UGPCameraComponent> UPrototypeGameplayAbility::GetOwnerCameraComponent()
+{
+	FGameplayAbilityActorInfo ActorInfo = GetActorInfo();
+	AActor* Actor = ActorInfo.AvatarActor.Get();
+
+	if (APrototypeBaseCharacter* Character = Cast<APrototypeBaseCharacter>(Actor))
+	{
+		return Character->CameraComponent;
+	}
+
+	return nullptr;
 }

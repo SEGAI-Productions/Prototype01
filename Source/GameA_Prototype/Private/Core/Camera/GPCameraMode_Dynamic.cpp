@@ -17,7 +17,7 @@
 UGPCameraMode_Dynamic::UGPCameraMode_Dynamic()
 {
 	TargetOffsetCurve = nullptr;
-	FocusOffsetCurve = nullptr;
+	DynamicOffsetCurve = nullptr;
 }
 
 void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
@@ -78,9 +78,9 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 		FVector Offset = FVector::Zero();
 
 		// Apply Dynamic offset using DeltaTime.
-		if (FocusOffsetCurve)
+		if (DynamicOffsetCurve)
 		{
-			FVector FocusOffset = FocusOffsetCurve->GetVectorValue(DeltaTime);
+			FVector FocusOffset = DynamicOffsetCurve->GetVectorValue(DeltaTime);
 			Offset = FocusOffset;
 			View.Location = Offset;
 		}
@@ -141,6 +141,11 @@ void UGPCameraMode_Dynamic::UpdatePreventPenetration(float DeltaTime)
 
 void UGPCameraMode_Dynamic::PreventCameraPenetration(AActor const& ViewTarget, FVector const& SafeLoc, FVector& CameraLoc, float const& DeltaTime, float& DistBlockedPct, bool bSingleRayOnly)
 {
+}
+
+void UGPCameraMode_Dynamic::SetDynamicOffsetCurve(TObjectPtr<const UCurveVector> DynamicOffset)
+{
+	DynamicOffsetCurve = DynamicOffset;
 }
 
 void UGPCameraMode_Dynamic::DrawDebug(UCanvas* Canvas) const
