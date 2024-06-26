@@ -88,11 +88,13 @@ void UGPCameraMode::UpdateCameraMode(float DeltaTime)
 	UpdateBlending(DeltaTime);
 }
 
-void UGPCameraMode::SetFocusObject(AActor* NewFocusObject)
+void UGPCameraMode::SetFocusActor(AActor* NewFocusActor)
 {
-	if (NewFocusObject)
+	if (!NewFocusActor) return;
+	
+	if (NewFocusActor != FocusActor)
 	{
-		FocusActor = NewFocusObject;
+		FocusActor = NewFocusActor;
 	}
 }
 
@@ -487,7 +489,7 @@ void UGPCameraModeStack::SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeCla
 
 	if (cameraMode)
 	{
-		cameraMode->SetFocusObject(NewFocusObject);
+		cameraMode->SetFocusActor(NewFocusObject);
 	}
 }
 

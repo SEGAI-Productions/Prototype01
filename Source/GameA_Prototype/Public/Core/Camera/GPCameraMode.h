@@ -88,7 +88,7 @@ public:
 
 	void UpdateCameraMode(float DeltaTime);
 
-	void SetFocusObject(AActor* NewFocusObject);
+	virtual void SetFocusActor(AActor* NewFocusActor);
 	void FocusSocketByName(FName FocusSocket);
 	float GetBlendTime() const { return BlendTime; }
 	float GetBlendWeight() const { return BlendWeight; }

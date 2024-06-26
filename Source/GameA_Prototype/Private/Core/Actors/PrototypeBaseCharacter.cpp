@@ -631,7 +631,7 @@ void APrototypeBaseCharacter::EquipWeapon()
 
 void APrototypeBaseCharacter::DestroyEquipmentActors()
 {
-	if (SpawnedEquipment)
+	if (SpawnedEquipment != nullptr)
 	{
 		SpawnedEquipment->Destroy();
 	}
