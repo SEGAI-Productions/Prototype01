@@ -27,6 +27,13 @@ protected:
 
 	virtual void UpdateView(float DeltaTime) override;
 
+
+	// Called when this camera mode is activated on the camera mode stack.
+	virtual void OnActivation();
+
+	// Called when this camera mode is deactivated on the camera mode stack.
+	virtual void OnDeactivation();
+
 	void UpdateForTarget(float DeltaTime);
 	void UpdatePreventPenetration(float DeltaTime);
 	void PreventCameraPenetration(class AActor const& ViewTarget, FVector const& SafeLoc, FVector& CameraLoc, float const& DeltaTime, float& DistBlockedPct, bool bSingleRayOnly);
@@ -104,14 +111,15 @@ public:
 #endif
 
 protected:
-
+	FVector GetFocusMidpoint(FVector PlayerLocation, FVector EnemyLocation);
 	void SetTargetCrouchOffset(FVector NewTargetOffset);
 	void UpdateCrouchOffset(float DeltaTime);
 
+	float CrouchOffsetBlendPct = 1.0f;
+	float ElapsedTime = 0.0f;
+
 	FVector InitialCrouchOffset = FVector::ZeroVector;
 	FVector TargetCrouchOffset = FVector::ZeroVector;
-	float CrouchOffsetBlendPct = 1.0f;
 	FVector CurrentCrouchOffset = FVector::ZeroVector;
-
 	FVector LastUpdatedFocusLocation = FVector::ZeroVector;
 };

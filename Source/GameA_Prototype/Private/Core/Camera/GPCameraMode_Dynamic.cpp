@@ -10,6 +10,8 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
 #include "Math/RotationMatrix.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GPCameraMode_Dynamic)
@@ -43,26 +45,50 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 	View.ControlRotation = PivotRotation;
 	View.FieldOfView = FieldOfView;
 	FVector FocusLocation = View.Location;
+	float AngleBetween = 0.0f;
 
 	// Determine the focus location based on the focus actor or the target actor.
-	if (FocusActor)
+	if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
 	{
-		// If there is a focus actor, set the focus location to its position.
-		FocusLocation = FocusActor->GetActorLocation();
-	}
-	else if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
-	{
-		// If the target actor is a pawn, get its focus location from a socket if it's a character.
-		if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
+		if (APawn* PlayerPawn = PlayerController->GetPawn())
 		{
-			if (TargetCharacter->GetMesh()->DoesSocketExist(FocusSocketName))
+			if (FocusActor)
 			{
-				FocusLocation = TargetCharacter->GetMesh()->GetSocketLocation(FocusSocketName);
+				APawn* EnemyPawn = Cast<APawn>(FocusActor);
+				ensure(EnemyPawn);
+				FVector PlayerLocation = PlayerPawn->GetActorLocation();
+				FVector EnemyLocation = EnemyPawn->GetActorLocation();
+				FocusLocation = (PlayerLocation + EnemyLocation) / 2;
+
+				// Calculate the direction vectors from the camera to the player and enemy
+				FVector CameraToPlayer = PlayerLocation - View.Location;
+				FVector CameraToEnemy = EnemyLocation - View.Location;
+
+				// Normalize the direction vectors
+				CameraToPlayer.Normalize();
+				CameraToEnemy.Normalize();
+
+				double product = FVector::DotProduct(CameraToPlayer, CameraToEnemy);
+				double Acos = FMath::Acos(product);
+				AngleBetween = FMath::RadiansToDegrees(Acos);
 			}
-			else
+			else if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
 			{
-				FocusLocation = PivotLocation;
+				// If the target actor is a pawn, get its focus location from a socket if it's a character.
+				if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
+				{
+					if (TargetCharacter->GetMesh()->DoesSocketExist(FocusSocketName))
+					{
+						FocusLocation = TargetCharacter->GetMesh()->GetSocketLocation(FocusSocketName);
+					}
+					else
+					{
+						FocusLocation = PivotLocation;
+					}
+				}
 			}
+			// If there is a focus actor, set the focus location to its position.
+			//FocusLocation = GetFocusMidpoint(PlayerPawn->GetActorLocation(), FocusActor->GetActorLocation());
 		}
 	}
 
@@ -80,7 +106,19 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 		// Apply Dynamic offset using DeltaTime.
 		if (DynamicOffsetCurve)
 		{
-			FVector FocusOffset = DynamicOffsetCurve->GetVectorValue(DeltaTime);
+			//FVector FocusOffset = DynamicOffsetCurve->GetVectorValue(ElapsedTime);
+			FVector FocusOffset = DynamicOffsetCurve->GetVectorValue(AngleBetween);
+
+			float TimeDilation = UGameplayStatics::GetGlobalTimeDilation(TargetActor->GetWorld());
+			float TimeIn = ElapsedTime / TimeDilation;
+			//TimeIn *= 10;
+			FVector FocusOffsetX = DynamicOffsetCurve->GetVectorValue(TimeIn * 10);
+
+			UE_LOG(LogTemp, Warning, TEXT("ElapsedTime : %f -- TimeDilation : %f -- TimeIn : %f -- FocusOffsetX : %f"), ElapsedTime, TimeDilation, TimeIn, FocusOffsetX.X);
+
+			FocusOffset = FVector(FocusOffsetX.X, FocusOffset.Y, FocusOffset.Z);
+
+			ElapsedTime += DeltaTime;
 			Offset = FocusOffset;
 			View.Location = Offset;
 		}
@@ -106,7 +144,7 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 
 	// Update the last known focus location
 	LastUpdatedFocusLocation = FocusLocation;
-
+	
 	// Calculate the rotation vector and set the view rotation accordingly
 	FVector RotationVector = FocusLocation - View.Location;
 	FRotator ViewRotation = RotationVector.Rotation();
@@ -115,6 +153,16 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 
 	// Adjust final desired camera location to prevent any penetration
 	UpdatePreventPenetration(DeltaTime);
+}
+
+void UGPCameraMode_Dynamic::OnActivation()
+{
+	ElapsedTime = 0.0f;
+}
+
+void UGPCameraMode_Dynamic::OnDeactivation()
+{
+	ElapsedTime = 0.0f;
 }
 
 void UGPCameraMode_Dynamic::UpdateForTarget(float DeltaTime)
@@ -164,6 +212,67 @@ void UGPCameraMode_Dynamic::DrawDebug(UCanvas* Canvas) const
 
 	LastDrawDebugTime = GetWorld()->GetTimeSeconds();
 #endif
+}
+
+FVector UGPCameraMode_Dynamic::GetFocusMidpoint(FVector PlayerLocation, FVector EnemyLocation)
+{
+	float FOV = View.FieldOfView;
+
+	// Calculate the midpoint between the player and the enemy
+	FVector Midpoint = (PlayerLocation + EnemyLocation) / 2;
+
+	// Calculate the direction vectors from the camera to the player and enemy
+	FVector CameraToPlayer = PlayerLocation - View.Location;
+	FVector CameraToEnemy = EnemyLocation - View.Location;
+
+	// Normalize the direction vectors
+	CameraToPlayer.Normalize();
+	CameraToEnemy.Normalize();
+
+	// Calculate the angle between the direction vectors
+	float AngleBetween = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(CameraToPlayer, CameraToEnemy)));
+
+	do
+	{
+		// Calculate the smallest angle to rotate the camera to fit both characters in view
+		float AngleToRotate = (AngleBetween - FOV) / 2.0f;
+
+		// Calculate the rotation axis
+		FVector RotationAxis = FVector::CrossProduct(CameraToPlayer, CameraToEnemy).GetSafeNormal();
+
+		// Create the rotation quaternion
+		FQuat RotationQuat = FQuat(RotationAxis, FMath::DegreesToRadians(AngleToRotate));
+
+		// Calculate the desired rotation for the camera
+		FQuat CurrentRotation = View.Rotation.Quaternion();
+		FQuat DesiredRotation = RotationQuat * CurrentRotation;
+
+		// Interpolate the camera rotation towards the desired rotation
+		//View.Rotation = FMath::Lerp(CurrentRotation, DesiredRotation, 0.1f).Rotator();
+
+		// Set the camera rotation to the desired rotation
+		View.Rotation = DesiredRotation.Rotator();
+
+		// Recalculate the direction vectors after the rotation
+		CameraToPlayer = PlayerLocation - View.Location;
+		CameraToEnemy = EnemyLocation - View.Location;
+		CameraToPlayer.Normalize();
+		CameraToEnemy.Normalize();
+
+		// Check if the new rotation encompasses both characters
+		AngleBetween = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(CameraToPlayer, CameraToEnemy)));
+
+		if (AngleBetween > FOV)
+		{
+			FOV++;
+			View.FieldOfView = FOV;
+			// move camera backwards away from character midpoint
+		}
+
+	} while (AngleBetween > FOV && FOV < 120);
+
+	// Both characters are within the camera's field of view, so return the midpoint
+	return Midpoint;
 }
 
 void UGPCameraMode_Dynamic::SetTargetCrouchOffset(FVector NewTargetOffset)
