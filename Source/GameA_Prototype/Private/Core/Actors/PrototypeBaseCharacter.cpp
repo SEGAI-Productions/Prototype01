@@ -23,7 +23,7 @@
 APrototypeBaseCharacter::APrototypeBaseCharacter(const class FObjectInitializer& ObjectInitializer)
 {
 	AbilityCameraMode = nullptr;
-
+	SpawnedEquipment = nullptr;
 
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -634,6 +634,7 @@ void APrototypeBaseCharacter::DestroyEquipmentActors()
 	if (SpawnedEquipment != nullptr)
 	{
 		SpawnedEquipment->Destroy();
+		SpawnedEquipment = nullptr;
 	}
 }
 
