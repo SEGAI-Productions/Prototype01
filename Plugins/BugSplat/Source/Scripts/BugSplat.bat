@@ -1,0 +1,1 @@
+echo "BugSplat [INFO]: Symbol uploads not configured, skipping..."
