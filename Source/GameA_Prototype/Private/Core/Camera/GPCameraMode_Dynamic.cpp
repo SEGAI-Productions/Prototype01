@@ -143,7 +143,7 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 		// Calculate the rotation vector and set the view rotation accordingly
 		FVector RotationVector = FocusLocation - View.Location;
 		FRotator ViewRotation = RotationVector.Rotation();
-		ViewRotation.Pitch = 0.0f;
+		//ViewRotation.Pitch = 0.0f;
 		View.Rotation = ViewRotation;
 	}
 
