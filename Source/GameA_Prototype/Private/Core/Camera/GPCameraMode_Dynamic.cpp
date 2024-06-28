@@ -44,7 +44,7 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 	View.Rotation = PivotRotation;
 	View.ControlRotation = PivotRotation;
 	View.FieldOfView = FieldOfView;
-	FVector FocusLocation = View.Location;
+	FVector FocusLocation = PivotLocation;
 	float AngleBetween = 0.0f;
 
 	// Determine the focus location based on the focus actor or the target actor.
@@ -81,14 +81,8 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 					{
 						FocusLocation = TargetCharacter->GetMesh()->GetSocketLocation(FocusSocketName);
 					}
-					else
-					{
-						FocusLocation = PivotLocation;
-					}
 				}
 			}
-			// If there is a focus actor, set the focus location to its position.
-			//FocusLocation = GetFocusMidpoint(PlayerPawn->GetActorLocation(), FocusActor->GetActorLocation());
 		}
 	}
 
@@ -111,10 +105,9 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 
 			float TimeDilation = UGameplayStatics::GetGlobalTimeDilation(TargetActor->GetWorld());
 			float TimeIn = ElapsedTime / TimeDilation;
-			//TimeIn *= 10;
 			FVector FocusOffsetX = DynamicOffsetCurve->GetVectorValue(TimeIn * 10);
 
-			UE_LOG(LogTemp, Warning, TEXT("ElapsedTime : %f -- TimeDilation : %f -- TimeIn : %f -- FocusOffsetX : %f"), ElapsedTime, TimeDilation, TimeIn, FocusOffsetX.X);
+			//UE_LOG(LogTemp, Warning, TEXT("ElapsedTime : %f -- TimeDilation : %f -- TimeIn : %f -- FocusOffsetX : %f"), ElapsedTime, TimeDilation, TimeIn, FocusOffsetX.X);
 
 			FocusOffset = FVector(FocusOffsetX.X, FocusOffset.Y, FocusOffset.Z);
 
@@ -145,11 +138,16 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 	// Update the last known focus location
 	LastUpdatedFocusLocation = FocusLocation;
 	
-	// Calculate the rotation vector and set the view rotation accordingly
-	FVector RotationVector = FocusLocation - View.Location;
-	FRotator ViewRotation = RotationVector.Rotation();
-	ViewRotation.Pitch = 0.0f;
-	View.Rotation = ViewRotation;
+	if (FocusActor)
+	{
+		// Calculate the rotation vector and set the view rotation accordingly
+		FVector RotationVector = FocusLocation - View.Location;
+		FRotator ViewRotation = RotationVector.Rotation();
+		ViewRotation.Pitch = 0.0f;
+		View.Rotation = ViewRotation;
+	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("View.Rotation =  Pitch: %f, Yaw: %f"), View.Rotation.Pitch, View.Rotation.Yaw);
 
 	// Adjust final desired camera location to prevent any penetration
 	UpdatePreventPenetration(DeltaTime);
@@ -157,12 +155,12 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 
 void UGPCameraMode_Dynamic::OnActivation()
 {
-	ElapsedTime = 0.0f;
 }
 
 void UGPCameraMode_Dynamic::OnDeactivation()
 {
 	ElapsedTime = 0.0f;
+	SetDynamicOffsetCurve(nullptr);
 }
 
 void UGPCameraMode_Dynamic::UpdateForTarget(float DeltaTime)
