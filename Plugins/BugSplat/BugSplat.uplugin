@@ -1,0 +1,44 @@
+{
+	"FileVersion": 3,
+	"Version": 0,
+	"VersionName": "1.3.1",
+	"FriendlyName": "BugSplat",
+	"Description": "BugSplat provides crash reporting for Unreal projects, and gives invaluable insight into the issues tripping up your users.",
+	"Category": "Code Plugins",
+	"CreatedBy": "BugSplat",
+	"CreatedByURL": "https://www.bugsplat.com",
+	"DocsURL": "https://docs.bugsplat.com/introduction/getting-started/integrations/game-development/unreal-engine#unreal-engine-plugin",
+	"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/f26128f947f5471fa7d24184545b3d09",
+	"SupportURL": "https://www.bugsplat.com",
+	"EngineVersion": "5.4.0",
+	"CanContainContent": true,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "BugSplat",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "BugSplatRuntime",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Android",
+				"IOS",
+				"Linux"
+			]
+		}
+	],
+	"PostBuildSteps": 
+	{
+		"Mac": [
+			"sh \"$(PluginDir)/Source/Scripts/setup-upload-symbols-ios.sh\" $(TargetPlatform) $(TargetName) \"$(ProjectDir)\" $(PluginDir)"
+		],
+		"Win64": [
+			"call \"$(PluginDir)\\Source\\Scripts\\upload-symbols-win64.bat\" $(TargetPlatform) \"$(ProjectDir)\" $(TargetName)"
+		]
+	}
+}
