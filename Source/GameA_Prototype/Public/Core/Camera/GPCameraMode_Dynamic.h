@@ -26,14 +26,15 @@ public:
 protected:
 
 	virtual void UpdateView(float DeltaTime) override;
-
+	bool IsActorInFOV(FVector ActorLocation);
+	void AdjustCameraIfNecessary(FVector PlayerLocation, FVector EnemyLocation, float DeltaTime);
+	float CalculateDistanceToMoveBack(const FVector& PlayerLocation, const FVector& EnemyLocation, float FOVAngle);
 
 	// Called when this camera mode is activated on the camera mode stack.
 	virtual void OnActivation();
 
 	// Called when this camera mode is deactivated on the camera mode stack.
 	virtual void OnDeactivation();
-
 	void UpdateForTarget(float DeltaTime);
 	void UpdatePreventPenetration(float DeltaTime);
 	void PreventCameraPenetration(class AActor const& ViewTarget, FVector const& SafeLoc, FVector& CameraLoc, float const& DeltaTime, float& DistBlockedPct, bool bSingleRayOnly);
@@ -66,6 +67,10 @@ protected:
 	// Alters the speed that a crouch offset is blended in or out
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic")
 	float CrouchOffsetBlendMultiplier = 5.0f;
+
+	// Alters the speed that a crouch offset is blended in or out
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic")
+	float InterpolationSpeed = .5f;
 
 	// Penetration prevention
 public:
@@ -111,7 +116,6 @@ public:
 #endif
 
 protected:
-	FVector GetFocusMidpoint(FVector PlayerLocation, FVector EnemyLocation);
 	void SetTargetCrouchOffset(FVector NewTargetOffset);
 	void UpdateCrouchOffset(float DeltaTime);
 
@@ -121,5 +125,6 @@ protected:
 	FVector InitialCrouchOffset = FVector::ZeroVector;
 	FVector TargetCrouchOffset = FVector::ZeroVector;
 	FVector CurrentCrouchOffset = FVector::ZeroVector;
+	FVector CurrentFOVOffset = FVector::ZeroVector;
 	FVector LastUpdatedFocusLocation = FVector::ZeroVector;
 };
