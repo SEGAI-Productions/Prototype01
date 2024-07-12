@@ -19,6 +19,9 @@ void UCooldownSubsystem::Deinitialize()
 
 void UCooldownSubsystem::ApplyCooldown(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner, float CooldownLength)
 {
+  if (bPruneOnEachApply)
+    PruneOutdatedCooldowns();
+
   if (CooldownOwner == nullptr)
     return;
 
@@ -34,48 +37,26 @@ void UCooldownSubsystem::ApplyCooldown(TSubclassOf<class UObject> CooldownClass,
   bool bFound = false;
   TWeakObjectPtr<AActor> OwnerWeakPtr = CooldownOwner;
   FCooldownEntryContainer& Container = PerActorCooldowns.FindOrAdd(OwnerWeakPtr);
-  for (FCooldownEntry& Entry : Container.CooldownList)
-  {
-    if (Entry.CooldownClass == CooldownClass)
-    {
-      bFound = true;
-      Entry.CooldownDuration = CooldownLength;
-      Entry.GameTimeSecondsWhenApplied = CurrentTime;
-      Entry.GameTimeSecondsWhenComplete = CurrentTime + CooldownLength;
+  FCooldownEntry& Entry = Container.CooldownList.FindOrAdd(CooldownClass);
+  Entry.CooldownOwner = CooldownOwner;
+  Entry.CooldownClass = CooldownClass;
+  Entry.CooldownDuration = CooldownLength;
+  Entry.GameTimeSecondsWhenApplied = CurrentTime;
+  Entry.GameTimeSecondsWhenComplete = CurrentTime + CooldownLength;
       
-      FString DisplayStr = FString::Printf(TEXT("Cooldown Applied: %s to %s for %f"), *CooldownClass->GetName(), *CooldownOwner->GetName(), CooldownLength);
-      UE_LOG(LogCooldown, Log, TEXT("%s"), *DisplayStr, *GetName());
-      if (GEngine)
-      {
-        GEngine->AddOnScreenDebugMessage(INDEX_NONE, CD_LOG_DISP_TIME, FColor::Orange, DisplayStr);
-      }
-      
-      break;
-    }
-  }
-
-  if (!bFound)
-  {
-    FCooldownEntry NewEntry;
-    NewEntry.CooldownOwner = CooldownOwner;
-    NewEntry.CooldownClass = CooldownClass;
-    NewEntry.CooldownDuration = CooldownLength;
-    NewEntry.GameTimeSecondsWhenApplied = CurrentTime;
-    NewEntry.GameTimeSecondsWhenComplete = CurrentTime + CooldownLength;
-        
-    Container.CooldownList.Add(NewEntry);
-
-    FString DisplayStr = FString::Printf(TEXT("Cooldown Applied: %s to %s for %f"), *CooldownClass->GetName(), *CooldownOwner->GetName(), CooldownLength);
-    UE_LOG(LogCooldown, Log, TEXT("%s"), *DisplayStr, *GetName());
-    if (GEngine)
-    {
-      GEngine->AddOnScreenDebugMessage(INDEX_NONE, CD_LOG_DISP_TIME, FColor::Orange, DisplayStr);
-    }
-  }
+  FString DisplayStr = FString::Printf(TEXT("Cooldown Applied: %s to %s for %f"), *CooldownClass->GetName(), *CooldownOwner->GetName(), CooldownLength);
+  UE_LOG(LogCooldown, Log, TEXT("%s"), *DisplayStr, *GetName());
+  //if (GEngine)
+  //{
+  //  GEngine->AddOnScreenDebugMessage(INDEX_NONE, CD_LOG_DISP_TIME, FColor::Orange, DisplayStr);
+  //}
 }
 
 void UCooldownSubsystem::ApplyGlobalCooldown(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner, float CooldownLength)
 {
+  if (bPruneOnEachApply)
+    PruneOutdatedCooldowns();
+
   UGameInstance* GameInstance = GetGameInstance();
   if (GameInstance == nullptr)
     return;
@@ -95,10 +76,10 @@ void UCooldownSubsystem::ApplyGlobalCooldown(TSubclassOf<class UObject> Cooldown
 
   FString DisplayStr = FString::Printf(TEXT("Global Cooldown Applied: %s by %s for %f"), *CooldownClass->GetName(), *CooldownOwner->GetName(), CooldownLength);
   UE_LOG(LogCooldown, Log, TEXT("%s"), *DisplayStr, *GetName());
-  if (GEngine)
-  {    
-    GEngine->AddOnScreenDebugMessage(INDEX_NONE, CD_LOG_DISP_TIME, FColor::Orange, DisplayStr);
-  }
+  //if (GEngine)
+  //{    
+  //  GEngine->AddOnScreenDebugMessage(INDEX_NONE, CD_LOG_DISP_TIME, FColor::Orange, DisplayStr);
+  //}
 }
 
 bool UCooldownSubsystem::IsOnCooldown(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner)
@@ -141,21 +122,98 @@ void UCooldownSubsystem::GetCooldownTimeRemainingAndDuration(TSubclassOf<class U
   FCooldownEntryContainer* Container = PerActorCooldowns.Find(OwnerWeakPtr);
   if (Container != nullptr)
   {
-    bool bClearCooldown = false;
-    int CurrentIndex = INDEX_NONE;
-    for (const FCooldownEntry Entry : Container->CooldownList)
+    FCooldownEntry* Entry = Container->CooldownList.Find(CooldownClass);
+    if (Entry != nullptr)
     {
-      CurrentIndex++;
-      if (Entry.CooldownClass == CooldownClass)
+      CooldownDuration = FMath::Max(CooldownDuration, Entry->CooldownDuration);
+      TimeRemaining = FMath::Max(0, Entry->GameTimeSecondsWhenComplete - CurrentTime);
+      if (TimeRemaining <= 0)
+        Container->CooldownList.Remove(CooldownClass);
+    }
+  }
+}
+
+void UCooldownSubsystem::PruneOutdatedCooldowns()
+{
+  UGameInstance* GameInstance = GetGameInstance();
+  if (GameInstance == nullptr)
+    return;
+
+  UWorld* World = GEngine->GetWorldFromContextObject(GameInstance, EGetWorldErrorMode::LogAndReturnNull);
+  if (World == nullptr)
+    return;
+
+  float CurrentTime = World->GetTimeSeconds();
+
+  // Prune global cooldowns
+  {
+    TArray<TSubclassOf<UObject>> OutdatedCooldowns;
+    TSet<TSubclassOf<UObject>> Keys;
+    GlobalCooldowns.GetKeys(Keys);
+    for (TSubclassOf<UObject> ObjClass : Keys)
+    {
+      FCooldownEntry* Entry = GlobalCooldowns.Find(ObjClass);
+      if (Entry != nullptr)
       {
-        CooldownDuration = FMath::Max(CooldownDuration, Entry.CooldownDuration);
-        float InstanceTimeRemaining = FMath::Max(0, Entry.GameTimeSecondsWhenComplete - CurrentTime);
-        TimeRemaining = FMath::Max(TimeRemaining, InstanceTimeRemaining);
-        bClearCooldown = InstanceTimeRemaining <= 0;
-        break;
+        float TimeRemaining = FMath::Max(0, Entry->GameTimeSecondsWhenComplete - CurrentTime);
+        if (TimeRemaining <= 0)
+          OutdatedCooldowns.Add(ObjClass);
       }
     }
-    if (bClearCooldown)
-      Container->CooldownList.RemoveAt(CurrentIndex);
+
+    for (TSubclassOf<UObject> ObjClass : OutdatedCooldowns)
+    {
+      GlobalCooldowns.Remove(ObjClass);
+    }
+  }
+
+  // Prune Actor Cooldowns
+  {
+    TArray<TWeakObjectPtr<AActor>> OutdatedActors;
+    TSet<TWeakObjectPtr<AActor>> Keys;
+    PerActorCooldowns.GetKeys(Keys);
+    for (TWeakObjectPtr ActorWeakPtr : Keys)
+    {
+      AActor* ActorPtr = ActorWeakPtr.Get();
+      if (ActorPtr == nullptr)
+      {
+        OutdatedActors.Add(ActorWeakPtr);
+        continue;
+      }
+
+      FCooldownEntryContainer* Container = PerActorCooldowns.Find(ActorWeakPtr);
+      if (Container != nullptr)
+      {
+        TArray<TSubclassOf<UObject>> OutdatedActorCooldowns;
+        TSet<TSubclassOf<UObject>> CdKeys;
+        Container->CooldownList.GetKeys(CdKeys);
+        for (TSubclassOf<UObject> ObjClass : CdKeys)
+        {
+          FCooldownEntry* Entry = GlobalCooldowns.Find(ObjClass);
+          if (Entry != nullptr)
+          {
+            float TimeRemaining = FMath::Max(0, Entry->GameTimeSecondsWhenComplete - CurrentTime);
+            if (TimeRemaining <= 0)
+              OutdatedActorCooldowns.Add(ObjClass);
+          }
+        }
+        if (OutdatedActorCooldowns.Num() == Container->CooldownList.Num())
+        {
+          OutdatedActors.Add(ActorWeakPtr);
+        }
+        else
+        {
+          for (TSubclassOf<UObject> ObjClass : OutdatedActorCooldowns)
+          {
+            Container->CooldownList.Remove(ObjClass);
+          }
+        }
+      }
+    }
+
+    for (TWeakObjectPtr<AActor> ActorWeakPtr : OutdatedActors)
+    {
+      PerActorCooldowns.Remove(ActorWeakPtr);
+    }
   }
 }

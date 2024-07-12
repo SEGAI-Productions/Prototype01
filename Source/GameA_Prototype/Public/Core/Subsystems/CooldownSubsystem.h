@@ -36,7 +36,7 @@ struct FCooldownEntryContainer
   GENERATED_USTRUCT_BODY()
 public:
   UPROPERTY(VisibleAnywhere)
-  TArray<FCooldownEntry> CooldownList;
+  TMap<TSubclassOf<class UObject>, FCooldownEntry> CooldownList;
 };
 
 /**
@@ -57,6 +57,10 @@ public:
   void ApplyGlobalCooldown(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner, float CooldownLength);
   bool IsOnCooldown(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner);
   void GetCooldownTimeRemainingAndDuration(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner, float& TimeRemaining, float& CooldownDuration);
+  void PruneOutdatedCooldowns();
+
+  UPROPERTY(BlueprintReadWrite, EditAnywhere)
+  bool bPruneOnEachApply = false;
 
 protected:
   UPROPERTY(VisibleAnywhere)
