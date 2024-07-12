@@ -248,7 +248,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	float TurnRateGamepad;
 
-	TObjectPtr<UAttributeSet> Attributes;
+	UPROPERTY(VisibleAnywhere, Category = "Attributes")
+	TObjectPtr<UAttributeSet> Attributes = nullptr;
 
 	///** Delegate to whom anyone can subscribe to receive this event */
 	//UPROPERTY(BlueprintAssignable, Category = "Interaction")
