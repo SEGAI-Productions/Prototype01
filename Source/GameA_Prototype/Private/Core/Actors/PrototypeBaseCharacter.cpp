@@ -129,38 +129,13 @@ void APrototypeBaseCharacter::InitializeAttributes()
 
 	Attributes = CreateDefaultSubobject<UGPPlayerAttributeSet>(TEXT("GPPlayerAttributeSet"));
 
-	// Log the class of DefaultAttributes
-	//if (DefaultAttributes)
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("DefaultAttributes class: %s"), *DefaultAttributes->GetName());
-
-	//	if (DefaultAttributes->IsChildOf(UGPPlayerAttributeSet::StaticClass()))
-	//	{
-	//		Attributes = NewObject<UGPPlayerAttributeSet>(this, DefaultAttributes);
-	//		//Attributes = CreateDefaultSubobject<UGPPlayerAttributeSet>(TEXT("GPPlayerAttributeSet"));
-	//	}
-	//	else
-	//	{
-	//		Attributes = NewObject<UPrototypeAttributeSet>(this, DefaultAttributes);
-	//		//Attributes = CreateDefaultSubobject<UPrototypeAttributeSet>(TEXT("PrototypeAttributeSet"));
-	//	}
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("DefaultAttributes is null."));
-	//	return;
-	//}	
-	
-	if (Attributes)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Attributes class: %s"), *Attributes->GetClass()->GetName());
-	}
-	else
+	if (Attributes == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to create Attributes from DefaultAttributes."));
 		return;
 	}
-
+	
+	UE_LOG(LogTemp, Warning, TEXT("Attributes class: %s"), *Attributes->GetClass()->GetName());
 	UPrototypeAttributeSet* prototypeAttributes = Cast<UPrototypeAttributeSet>(Attributes);
 
 	if (prototypeAttributes)
@@ -232,12 +207,15 @@ void APrototypeBaseCharacter::RemoveCharacterGameplayAbility(const FGameplayAbil
 
 void APrototypeBaseCharacter::InitializeHealth(float health)
 {
-	UPrototypeAttributeSet* prototypeAttributes = Cast<UPrototypeAttributeSet>(Attributes);
-	if (prototypeAttributes)
+	if (Attributes != nullptr)
 	{
-		prototypeAttributes->InitHealth(health);
-		prototypeAttributes->InitMaxHealth(health);
-		return;
+		UPrototypeAttributeSet* prototypeAttributes = CastChecked<UPrototypeAttributeSet>(Attributes);
+		if (prototypeAttributes)
+		{
+			prototypeAttributes->InitHealth(health);
+			prototypeAttributes->InitMaxHealth(health);
+			return;
+		}
 	}
 
 	UE_LOG(LogTemp, Error, TEXT("Attribute Set Not Initialized!"));
@@ -248,7 +226,7 @@ UEnhancedInputLocalPlayerSubsystem* APrototypeBaseCharacter::GetInputSubsystem()
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = nullptr;
 
 	// Make sure that we have a valid PlayerController.
-	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	APlayerController* PlayerController = CastChecked<APlayerController>(GetController());
 
 	if (PlayerController) 
 	{ 
@@ -264,10 +242,13 @@ void APrototypeBaseCharacter::CancelAbilityWithTags(const FGameplayTagContainer 
 
 float APrototypeBaseCharacter::GetHealth() const
 {
-	UPrototypeAttributeSet* prototypeAttributes = Cast<UPrototypeAttributeSet>(Attributes);
-	if (prototypeAttributes)
+	if (Attributes != nullptr)
 	{
-		return prototypeAttributes->GetHealth();
+		UPrototypeAttributeSet* prototypeAttributes = CastChecked<UPrototypeAttributeSet>(Attributes);
+		if (prototypeAttributes != nullptr)
+		{
+			return prototypeAttributes->GetHealth();
+		}
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Attribute Set Not Initialized!"));
@@ -276,10 +257,13 @@ float APrototypeBaseCharacter::GetHealth() const
 
 float APrototypeBaseCharacter::GetMaxHealth() const
 {
-	UPrototypeAttributeSet* prototypeAttributes = Cast<UPrototypeAttributeSet>(Attributes);
-	if (prototypeAttributes)
+	if (Attributes != nullptr)
 	{
-		return prototypeAttributes->GetMaxHealth();
+		UPrototypeAttributeSet* prototypeAttributes = CastChecked<UPrototypeAttributeSet>(Attributes);
+		if (prototypeAttributes)
+		{
+			return prototypeAttributes->GetMaxHealth();
+		}
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Attribute Set Not Initialized!"));
