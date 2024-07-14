@@ -57,8 +57,12 @@ public:
   void ApplyGlobalCooldown(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner, float CooldownLength);
   bool IsOnCooldown(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner);
   void GetCooldownTimeRemainingAndDuration(TSubclassOf<class UObject> CooldownClass, AActor* CooldownOwner, float& TimeRemaining, float& CooldownDuration);
+
+  // This could be called by anything (probably GameMode)
+  UFUNCTION(BlueprintCallable)
   void PruneOutdatedCooldowns();
 
+  // Set this to true if you don't want to manage manually pruning cooldowns
   UPROPERTY(BlueprintReadWrite, EditAnywhere)
   bool bPruneOnEachApply = false;
 
@@ -68,4 +72,9 @@ protected:
 
   UPROPERTY(VisibleAnywhere)
   TMap<TWeakObjectPtr<AActor>, FCooldownEntryContainer> PerActorCooldowns;
+
+private:
+  TSet<TSubclassOf<UObject>> GlobalKeys;
+  TSet<TWeakObjectPtr<AActor>> ActorKeys;
+  TSet<TSubclassOf<UObject>> ActorCooldownKeys;
 };

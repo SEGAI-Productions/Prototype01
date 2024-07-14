@@ -29,6 +29,9 @@ void UCooldownSubsystem::ApplyCooldown(TSubclassOf<class UObject> CooldownClass,
   if (GameInstance == nullptr)
     return;
 
+  if (GEngine == nullptr)
+    return;
+
   UWorld* World = GEngine->GetWorldFromContextObject(GameInstance, EGetWorldErrorMode::LogAndReturnNull);
   if (World == nullptr)
     return;
@@ -59,6 +62,9 @@ void UCooldownSubsystem::ApplyGlobalCooldown(TSubclassOf<class UObject> Cooldown
 
   UGameInstance* GameInstance = GetGameInstance();
   if (GameInstance == nullptr)
+    return;
+
+  if (GEngine == nullptr)
     return;
 
   UWorld* World = GEngine->GetWorldFromContextObject(GameInstance, EGetWorldErrorMode::LogAndReturnNull);
@@ -97,6 +103,9 @@ void UCooldownSubsystem::GetCooldownTimeRemainingAndDuration(TSubclassOf<class U
 
   UGameInstance* GameInstance = GetGameInstance();
   if (GameInstance == nullptr)
+    return;
+
+  if (GEngine == nullptr)
     return;
 
   UWorld* World = GEngine->GetWorldFromContextObject(GameInstance, EGetWorldErrorMode::LogAndReturnNull);
@@ -139,6 +148,9 @@ void UCooldownSubsystem::PruneOutdatedCooldowns()
   if (GameInstance == nullptr)
     return;
 
+  if (GEngine == nullptr)
+    return;
+
   UWorld* World = GEngine->GetWorldFromContextObject(GameInstance, EGetWorldErrorMode::LogAndReturnNull);
   if (World == nullptr)
     return;
@@ -147,73 +159,63 @@ void UCooldownSubsystem::PruneOutdatedCooldowns()
 
   // Prune global cooldowns
   {
-    TArray<TSubclassOf<UObject>> OutdatedCooldowns;
-    TSet<TSubclassOf<UObject>> Keys;
-    GlobalCooldowns.GetKeys(Keys);
-    for (TSubclassOf<UObject> ObjClass : Keys)
-    {
-      FCooldownEntry* Entry = GlobalCooldowns.Find(ObjClass);
-      if (Entry != nullptr)
-      {
-        float TimeRemaining = FMath::Max(0, Entry->GameTimeSecondsWhenComplete - CurrentTime);
-        if (TimeRemaining <= 0)
-          OutdatedCooldowns.Add(ObjClass);
-      }
-    }
+    GlobalCooldowns.GetKeys(GlobalKeys);
 
-    for (TSubclassOf<UObject> ObjClass : OutdatedCooldowns)
+    for (TSubclassOf<UObject> ObjClass : GlobalKeys)
     {
-      GlobalCooldowns.Remove(ObjClass);
+      if (FCooldownEntry* Entry = GlobalCooldowns.Find(ObjClass))
+      {
+        if (Entry->GameTimeSecondsWhenComplete - CurrentTime <= 0)
+          GlobalCooldowns.Remove(ObjClass);
+      }
+      else
+      {
+        GlobalCooldowns.Remove(ObjClass);
+      }
     }
   }
 
   // Prune Actor Cooldowns
   {
-    TArray<TWeakObjectPtr<AActor>> OutdatedActors;
-    TSet<TWeakObjectPtr<AActor>> Keys;
-    PerActorCooldowns.GetKeys(Keys);
-    for (TWeakObjectPtr ActorWeakPtr : Keys)
+    PerActorCooldowns.GetKeys(ActorKeys);
+
+    for (TWeakObjectPtr ActorWeakPtr : ActorKeys)
     {
       AActor* ActorPtr = ActorWeakPtr.Get();
       if (ActorPtr == nullptr)
       {
-        OutdatedActors.Add(ActorWeakPtr);
+        PerActorCooldowns.Remove(ActorWeakPtr);
         continue;
       }
 
       FCooldownEntryContainer* Container = PerActorCooldowns.Find(ActorWeakPtr);
-      if (Container != nullptr)
+      if (Container == nullptr)
       {
-        TArray<TSubclassOf<UObject>> OutdatedActorCooldowns;
-        TSet<TSubclassOf<UObject>> CdKeys;
-        Container->CooldownList.GetKeys(CdKeys);
-        for (TSubclassOf<UObject> ObjClass : CdKeys)
+        PerActorCooldowns.Remove(ActorWeakPtr);
+        continue;
+      }
+
+      Container->CooldownList.GetKeys(ActorCooldownKeys);
+
+      for (TSubclassOf<UObject> ObjClass : ActorCooldownKeys)
+      {
+        if (FCooldownEntry* Entry = Container->CooldownList.Find(ObjClass))
         {
-          FCooldownEntry* Entry = GlobalCooldowns.Find(ObjClass);
-          if (Entry != nullptr)
-          {
-            float TimeRemaining = FMath::Max(0, Entry->GameTimeSecondsWhenComplete - CurrentTime);
-            if (TimeRemaining <= 0)
-              OutdatedActorCooldowns.Add(ObjClass);
-          }
-        }
-        if (OutdatedActorCooldowns.Num() == Container->CooldownList.Num())
-        {
-          OutdatedActors.Add(ActorWeakPtr);
-        }
-        else
-        {
-          for (TSubclassOf<UObject> ObjClass : OutdatedActorCooldowns)
+          if (Entry->GameTimeSecondsWhenComplete - CurrentTime <= 0)
           {
             Container->CooldownList.Remove(ObjClass);
           }
         }
+        else
+        {
+          Container->CooldownList.Remove(ObjClass);
+        }        
       }
-    }
 
-    for (TWeakObjectPtr<AActor> ActorWeakPtr : OutdatedActors)
-    {
-      PerActorCooldowns.Remove(ActorWeakPtr);
+      if (Container->CooldownList.Num() == 0)
+      {
+        PerActorCooldowns.Remove(ActorWeakPtr);
+      }
     }
   }
 }
