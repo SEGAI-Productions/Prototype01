@@ -12,7 +12,8 @@
 				"GameplayAbilities",
 				"Engine",
 				"EnhancedInput",
-				"CoreUObject"
+				"CoreUObject",
+				"GameplayCameras"
 			]
 		}
 	],
