@@ -24,8 +24,3 @@ UGPImpactCameraShake::UGPImpactCameraShake()
 	LocOscillation.Z.InitialOffset = EInitialOscillatorOffset::EOO_OffsetRandom;
 	LocOscillation.Z.Waveform = EOscillatorWaveform::SineWave;
 }
-
-void UGPImpactCameraShake::SetOscillationDuration(float Duration)
-{
-	OscillationDuration = Duration;
-}

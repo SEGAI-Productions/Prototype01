@@ -26,6 +26,11 @@ void UPrototypeAttributeSet::PreAttributeChange(const FGameplayAttribute& Attrib
 	{
 		AdjustAttributeForMaxChanged(Health, MaxHealth, NewValue, GetHealthAttribute());
 	}
+
+	if (Attribute == GetDamageAttribute())
+	{
+		AdjustHealthForAppliedDamage(Health, NewValue, GetHealthAttribute());
+	}
 }
 
 void UPrototypeAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -89,6 +94,18 @@ void UPrototypeAttributeSet::AdjustAttributeForMaxChanged(
 
 		AbilityComponent->ApplyModToAttributeUnsafe(AffectdAttributeProperty, EGameplayModOp::Additive, NewDelta);
 	}
+}
+
+void UPrototypeAttributeSet::AdjustHealthForAppliedDamage(
+	const FGameplayAttributeData& AffectedAttribute, 
+	float DamageValue, 
+	const FGameplayAttribute& AffectdAttributeProperty) const
+{
+	UAbilitySystemComponent* AbilityComponent = GetOwningAbilitySystemComponent();
+	const float CurrentValue = AffectedAttribute.GetCurrentValue();
+	const float NewDelta = FMath::Min(CurrentValue, DamageValue) * -1.0f;
+
+	AbilityComponent->ApplyModToAttributeUnsafe(AffectdAttributeProperty, EGameplayModOp::Additive, NewDelta);
 }
 
 void UPrototypeAttributeSet::OnRep_AttackWeight(const FGameplayAttributeData& OldValue)

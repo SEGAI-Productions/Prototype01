@@ -56,6 +56,11 @@ public:
 		float NewMaxValue,
 		const FGameplayAttribute& AffectdAttributeProperty) const;
 
+	void AdjustHealthForAppliedDamage(
+		const FGameplayAttributeData& AffectedAttribute,
+		float DamageValue,
+		const FGameplayAttribute& AffectdAttributeProperty) const;
+
 	UFUNCTION()
 	virtual void OnRep_AttackWeight(const FGameplayAttributeData& OldValue);
 
