@@ -197,6 +197,7 @@ void UGPCameraMode_Dynamic::OnDeactivation()
 {
 	ElapsedTime = 0.0f;
 	SetDynamicOffsetCurve(nullptr);
+	FocusActor = nullptr;
 }
 
 void UGPCameraMode_Dynamic::UpdateForTarget(float DeltaTime)
