@@ -148,7 +148,7 @@ protected:
 	// Blend weight calculated using the blend alpha and function.
 	float BlendWeight;
 
-	AActor* FocusActor;
+	AActor* FocusActor = nullptr;
 	FName FocusSocketName;
 
 protected:

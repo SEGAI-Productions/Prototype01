@@ -27,6 +27,11 @@ protected:
 
 	void UpdateForTarget(float DeltaTime);
 	void UpdatePreventPenetration(float DeltaTime);
+	void UpdateLookAtRotation(const AActor* OtherActor, FVector const& PivotLocation);
+	FVector GetFocusActorLocation(const AActor* OtherActor);
+	void AdjustCameraIfNecessary(FVector PlayerLocation, FVector EnemyLocation, float DeltaTime);
+	bool IsActorInFOV(FVector ActorLocation);
+	float CalculateDistanceToMoveBack(const FVector& PlayerLocation, const FVector& EnemyLocation, float FOVAngle);
 	void PreventCameraPenetration(class AActor const& ViewTarget, FVector const& SafeLoc, FVector& CameraLoc, float const& DeltaTime, float& DistBlockedPct, bool bSingleRayOnly);
 
 	virtual void DrawDebug(UCanvas* Canvas) const override;
@@ -78,6 +83,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	float ReportPenetrationPercent = 0.f;
 
+	// Alters the speed that a crouch offset is blended in or out
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic")
+	float InterpolationSpeed = .5f;
+
 	/**
 	 * These are the feeler rays that are used to find where to place the camera.
 	 * Index: 0  : This is the normal feeler we use to prevent collisions.
@@ -100,12 +109,13 @@ public:
 
 protected:
 
-	void SetTargetCrouchOffset(FVector NewTargetOffset);
-	void UpdateCrouchOffset(float DeltaTime);
-
+	float CrouchOffsetBlendPct = 1.0f;
+	FVector TargetOffset = FVector::ZeroVector;
 	FVector InitialCrouchOffset = FVector::ZeroVector;
 	FVector TargetCrouchOffset = FVector::ZeroVector;
-	float CrouchOffsetBlendPct = 1.0f;
+	FVector CurrentFOVOffset = FVector::ZeroVector;
 	FVector CurrentCrouchOffset = FVector::ZeroVector;
-	
+
+	void SetTargetCrouchOffset(FVector NewTargetOffset);
+	void UpdateCrouchOffset(float DeltaTime);
 };
