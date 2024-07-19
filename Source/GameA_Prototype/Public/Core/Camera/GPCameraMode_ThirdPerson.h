@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Core/Camera/GPCameraMode.h"
 #include "Curves/CurveFloat.h"
+#include "Core/Camera/SegaiPenetrationAvoidanceFeeler.h"
 #include "GPCameraMode_ThirdPerson.generated.h"
 
 class UCurveVector;
@@ -95,7 +96,7 @@ public:
 	 *             impacting the occluder.
 	 */
 	//UPROPERTY(EditDefaultsOnly, Category = "Collision")
-	//TArray<FLyraPenetrationAvoidanceFeeler> PenetrationAvoidanceFeelers;
+	TArray<FSegaiPenetrationAvoidanceFeeler> PenetrationAvoidanceFeelers;
 
 	UPROPERTY(Transient)
 	float AimLineToDesiredPosBlockedPct;

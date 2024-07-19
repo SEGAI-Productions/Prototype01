@@ -18,7 +18,7 @@ class UObject;
 
 
 /**
- * FLyraAbilitySet_GameplayAbility
+ * FSegaiAbilitySet_GameplayAbility
  *
  *	Data used by the ability set to grant gameplay abilities.
  */
@@ -44,7 +44,7 @@ public:
 
 
 /**
- * FLyraAbilitySet_GameplayEffect
+ * FSegaiAbilitySet_GameplayEffect
  *
  *	Data used by the ability set to grant gameplay effects.
  */
@@ -65,7 +65,7 @@ public:
 };
 
 /**
- * FLyraAbilitySet_AttributeSet
+ * FSegaiAbilitySet_AttributeSet
  *
  *	Data used by the ability set to grant attribute sets.
  */
@@ -82,7 +82,7 @@ public:
 };
 
 /**
- * FLyraAbilitySet_GrantedHandles
+ * FSegaiAbilitySet_GrantedHandles
  *
  *	Data used to store handles to what has been granted by the ability set.
  */
