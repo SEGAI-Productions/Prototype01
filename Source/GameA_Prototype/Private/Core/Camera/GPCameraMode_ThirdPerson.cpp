@@ -214,7 +214,7 @@ void UGPCameraMode_ThirdPerson::AdjustCameraIfNecessary(FVector PlayerLocation, 
 		FVector NewViewLocation = View.Location - (ViewForward * DistanceToMoveBack);
 
 		// Smooth out the camera transition
-		View.Location = FMath::VInterpTo(CurrentFOVOffset, NewViewLocation, DeltaTime, InterpolationSpeed);
+		View.Location = FMath::VInterpTo(View.Location, NewViewLocation, DeltaTime, InterpolationSpeed);
 	}
 }
 
