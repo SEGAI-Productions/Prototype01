@@ -31,6 +31,7 @@ UGPCameraMode_ThirdPerson::UGPCameraMode_ThirdPerson()
 	PenetrationAvoidanceFeelers.Add(FSegaiPenetrationAvoidanceFeeler(FRotator(+00.0f, -32.0f, 0.0f), 0.50f, 0.50f, 00.f, 5));
 	PenetrationAvoidanceFeelers.Add(FSegaiPenetrationAvoidanceFeeler(FRotator(+20.0f, +00.0f, 0.0f), 1.00f, 1.00f, 00.f, 4));
 	PenetrationAvoidanceFeelers.Add(FSegaiPenetrationAvoidanceFeeler(FRotator(-20.0f, +00.0f, 0.0f), 0.50f, 0.50f, 00.f, 4));
+
 }
 
 void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
@@ -39,13 +40,16 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	UpdateCrouchOffset(DeltaTime);
 
 	FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
+
+	// Make sure to clamp the pitch of the controller
 	FRotator PivotRotation = GetPivotRotation();
-
 	PivotRotation.Pitch = FMath::ClampAngle(PivotRotation.Pitch, ViewPitchMin, ViewPitchMax);
+	View.ControlRotation = PivotRotation;
 
+	FVector ViewLocation = PivotLocation;
 	View.Location = PivotLocation;
+	FRotator ViewRotation = PivotRotation;
 	View.Rotation = PivotRotation;
-	View.ControlRotation = View.Rotation;
 	View.FieldOfView = FieldOfView;
 
 	// Apply third person offset using pitch.
@@ -54,7 +58,7 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 		if (TargetOffsetCurve)
 		{
 			TargetOffset = TargetOffsetCurve->GetVectorValue(PivotRotation.Pitch);
-			View.Location = PivotLocation + PivotRotation.RotateVector(TargetOffset);
+			ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 		}
 	}
 	else
@@ -63,17 +67,44 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 		TargetOffset.Y = TargetOffsetY.GetRichCurveConst()->Eval(PivotRotation.Pitch);
 		TargetOffset.Z = TargetOffsetZ.GetRichCurveConst()->Eval(PivotRotation.Pitch);
 
-		View.Location = PivotLocation + PivotRotation.RotateVector(TargetOffset);
+		ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 	}
 
-	if (FocusActor)
-	{
-		UpdateLookAtRotation(FocusActor, PivotLocation);
-		AdjustCameraIfNecessary(PivotLocation, GetFocusActorLocation(FocusActor), DeltaTime);
-	}
+	FVector FocusLocation = GetFocusLocation();
+	View.Location = ViewLocation;
+
+	AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
 
 	// Adjust final desired camera location to prevent any penetration
 	UpdatePreventPenetration(DeltaTime);
+}
+
+FVector UGPCameraMode_ThirdPerson::GetFocusLocation()
+{
+	FVector PivotLocation = GetPivotLocation();
+	FRotator PivotRotation = GetPivotRotation();
+
+	if (FocusActor)
+	{
+		FVector FocusActorLocation = FocusActor->GetActorLocation();
+		return FocusActorLocation;
+	}
+
+	if (const APawn* TargetPawn = Cast<APawn>(GetTargetActor()))
+	{
+		// If the target actor is a pawn, get its forward rotation.
+		if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
+		{
+			FRotator CharacterRotation = TargetCharacter->GetActorRotation();
+			FVector CharacterForwardVector = CharacterRotation.Vector() * 400;
+			FVector ForwardLocation = PivotLocation + CharacterForwardVector;
+			return ForwardLocation;
+		}
+	}
+
+	FVector PivotForwardVector = PivotRotation.Vector() * 400;
+	FVector PivotForwardLocation = PivotLocation + PivotForwardVector;
+	return PivotForwardLocation;
 }
 
 void UGPCameraMode_ThirdPerson::UpdateForTarget(float DeltaTime)
@@ -93,24 +124,6 @@ void UGPCameraMode_ThirdPerson::UpdateForTarget(float DeltaTime)
 	}
 
 	SetTargetCrouchOffset(FVector::ZeroVector);
-}
-
-void UGPCameraMode_ThirdPerson::DrawDebug(UCanvas* Canvas) const
-{
-	Super::DrawDebug(Canvas);
-
-#if ENABLE_DRAW_DEBUG
-	FDisplayDebugManager& DisplayDebugManager = Canvas->DisplayDebugManager;
-	for (int i = 0; i < DebugActorsHitDuringCameraPenetration.Num(); i++)
-	{
-		DisplayDebugManager.DrawString(
-			FString::Printf(TEXT("HitActorDuringPenetration[%d]: %s")
-				, i
-				, *DebugActorsHitDuringCameraPenetration[i]->GetName()));
-	}
-
-	LastDrawDebugTime = GetWorld()->GetTimeSeconds();
-#endif
 }
 
 void UGPCameraMode_ThirdPerson::UpdatePreventPenetration(float DeltaTime)
@@ -175,47 +188,63 @@ void UGPCameraMode_ThirdPerson::UpdatePreventPenetration(float DeltaTime)
 	}
 }
 
-void UGPCameraMode_ThirdPerson::UpdateLookAtRotation(const AActor* OtherActor, FVector const& PivotLocation)
+float UGPCameraMode_ThirdPerson::CalculateAngleBetweenVectors(const FVector& A, const FVector& B)
 {
-	FVector LookAtLocation = PivotLocation;
+	float DotProd = FVector::DotProduct(A, B);
+	float MagnitudeA = A.Size();
+	float MagnitudeB = B.Size();
+	float CosTheta = DotProd / (MagnitudeA * MagnitudeB);
+	return FMath::Acos(CosTheta) * (180.0f / PI);
+}
 
-	FVector OtherLocation = GetFocusActorLocation(OtherActor);
-	LookAtLocation = (PivotLocation + OtherLocation) / 2;
+FVector UGPCameraMode_ThirdPerson::CalculateMidpoint(FVector const& LocationA, FVector const& LocationB)
+{
+	FVector MidPoint = (LocationA + LocationB) / 2;
+	return MidPoint;
+}
 
+
+FRotator UGPCameraMode_ThirdPerson::CalculateRotationToMidpoint(FVector const& MidPoint, FVector const& ViewLocation)
+{
 	// Calculate the rotation vector and set the view rotation accordingly
-	FVector RotationVector = LookAtLocation - View.Location;
+	FVector RotationVector = MidPoint - ViewLocation;
+	RotationVector.Normalize();
 	FRotator ViewRotation = RotationVector.Rotation();
+	return ViewRotation;
+}
+
+void UGPCameraMode_ThirdPerson::AdjustCameraIfNecessary(FVector const& LocationA, FVector const& LocationB, FVector ViewLocation, float DeltaTime)
+{
+	if (!bUseAutoFocus) return;
+
+	float angle = CalculateAngleBetweenVectors(LocationA - ViewLocation, LocationB - ViewLocation);
+
+	FVector MidPoint = CalculateMidpoint(LocationA, LocationB);
+
+	// Set rotation of the camera to look at midpoint
+	FRotator ViewRotation = CalculateRotationToMidpoint(MidPoint, ViewLocation);
 	View.Rotation = ViewRotation;
-}
 
-FVector UGPCameraMode_ThirdPerson::GetFocusActorLocation(const AActor* OtherActor)
-{
-	APawn* OtherPawn = Cast<APawn>(FocusActor);
-	ensure(OtherPawn);
+	// Calculate the min distance from midpoint to have both actors in FOV
+	float DistanceToMoveBack = CalculateDistanceFromMidpoint(LocationA, LocationB, MidPoint, View.FieldOfView);
 
-	return OtherPawn->GetActorLocation();
-}
+	float CurrentDist = FVector::Dist(ViewLocation, MidPoint);
+	//UE_LOG(LogTemp, Warning, TEXT("Dist: %f, %f"), CurrentDist, DistanceToMoveBack);
+	DistanceToMoveBack = FMath::Max(DistanceToMoveBack, CurrentDist);
 
-void UGPCameraMode_ThirdPerson::AdjustCameraIfNecessary(FVector PlayerLocation, FVector EnemyLocation, float DeltaTime)
-{
-	bool bIsPlayerInFOV = IsActorInFOV(PlayerLocation);
-	bool bIsEnemyInFOV = IsActorInFOV(EnemyLocation);
+	// Calculate the view direction and new camera position
+	FVector ViewForward = ViewRotation.Vector();
+	FVector MovementDirection = ViewForward;
 
-	if (!bIsPlayerInFOV || !bIsEnemyInFOV)
-	{
-		// Calculate the necessary distance to move back to have both actors in FOV
-		float DistanceToMoveBack = CalculateDistanceToMoveBack(PlayerLocation, EnemyLocation, View.FieldOfView / 2);
+	// Adjust camera position by moving back
+	FVector NewViewLocation = MidPoint - (ViewForward * DistanceToMoveBack);
 
-		// Calculate the view direction and new camera position
-		FVector ViewForward = View.Rotation.Vector();
-		ViewForward.Normalize();
+	View.Location = NewViewLocation;
 
-		// Adjust camera position by moving back
-		FVector NewViewLocation = View.Location - (ViewForward * DistanceToMoveBack);
-
-		// Smooth out the camera transition
-		View.Location = FMath::VInterpTo(View.Location, NewViewLocation, DeltaTime, InterpolationSpeed);
-	}
+	// TODO
+	// Smooth out the camera transition and rotation
+	//View.Rotation = FMath::RInterpTo(View.Rotation, ViewRotation, DeltaTime, InterpolationSpeed);
+	//View.Location = FMath::VInterpTo(View.Location, NewViewLocation, DeltaTime, InterpolationSpeed);
 }
 
 bool UGPCameraMode_ThirdPerson::IsActorInFOV(FVector ActorLocation)
@@ -232,16 +261,30 @@ bool UGPCameraMode_ThirdPerson::IsActorInFOV(FVector ActorLocation)
 	return Angle <= (FOV / 2.0f);
 }
 
-float UGPCameraMode_ThirdPerson::CalculateDistanceToMoveBack(const FVector& PlayerLocation, const FVector& EnemyLocation, float FOVAngle)
+float UGPCameraMode_ThirdPerson::CalculateDistanceFromMidpoint(const FVector& PlayerLocation, const FVector& EnemyLocation, const FVector& MidPoint, float FOVAngle)
 {
-	FVector MidPoint = (PlayerLocation + EnemyLocation) / 2;
-	float HalfFOV = FOVAngle / 2.0f;
+	// Clamp the pitch to the range [ViewPitchMin, ViewPitchMax]
+	float Pitch = FMath::Clamp(View.ControlRotation.Pitch, ViewPitchMin, ViewPitchMax);
+
+	// Define the angle at pitch 0 and at pitch 90 or -90
+	float AngleAtZeroPitch = FOVAngle;
+	float AngleAtExtremePitch = FOVAngle / 4;
+
+	// Calculate the interpolation parameter t based on the absolute value of the pitch
+	float t = FMath::Abs(Pitch) / 90.0f;
+
+	// Use a power function to curve the interpolation
+	// Result will change faster as it approaches 0.
+	float curvedT = FMath::Pow(t, 0.1f); // Adjust the exponent to control the curve
+
+	// Interpolate the angle
+	float AdjustedAngle = FMath::Lerp(AngleAtZeroPitch, AngleAtExtremePitch, curvedT);
 
 	// Calculate the distance between the player and enemy
 	float DistanceBetweenActors = FVector::Dist(PlayerLocation, EnemyLocation);
 
-	// Calculate the minimum distance to move back based on the FOV
-	float DistanceToMoveBack = (DistanceBetweenActors / 2.0f) / FMath::Tan(FMath::DegreesToRadians(HalfFOV));
+	// Calculate the minimum distance to move back based on the AdjustedAngle
+	float DistanceToMoveBack = (DistanceBetweenActors / 2.0f) / FMath::Tan(FMath::DegreesToRadians(AdjustedAngle));
 
 	return DistanceToMoveBack;
 }
@@ -425,13 +468,30 @@ void UGPCameraMode_ThirdPerson::PreventCameraPenetration(class AActor const& Vie
 	}
 }
 
+void UGPCameraMode_ThirdPerson::DrawDebug(UCanvas* Canvas) const
+{
+	Super::DrawDebug(Canvas);
+
+#if ENABLE_DRAW_DEBUG
+	FDisplayDebugManager& DisplayDebugManager = Canvas->DisplayDebugManager;
+	for (int i = 0; i < DebugActorsHitDuringCameraPenetration.Num(); i++)
+	{
+		DisplayDebugManager.DrawString(
+			FString::Printf(TEXT("HitActorDuringPenetration[%d]: %s")
+				, i
+				, *DebugActorsHitDuringCameraPenetration[i]->GetName()));
+	}
+
+	LastDrawDebugTime = GetWorld()->GetTimeSeconds();
+#endif
+}
+
 void UGPCameraMode_ThirdPerson::SetTargetCrouchOffset(FVector NewTargetOffset)
 {
 	CrouchOffsetBlendPct = 0.0f;
 	InitialCrouchOffset = CurrentCrouchOffset;
 	TargetCrouchOffset = NewTargetOffset;
 }
-
 
 void UGPCameraMode_ThirdPerson::UpdateCrouchOffset(float DeltaTime)
 {
@@ -444,5 +504,26 @@ void UGPCameraMode_ThirdPerson::UpdateCrouchOffset(float DeltaTime)
 	{
 		CurrentCrouchOffset = TargetCrouchOffset;
 		CrouchOffsetBlendPct = 1.0f;
+	}
+}
+
+void UGPCameraMode_ThirdPerson::SetTargetViewLocation(FVector NewTargetOffset)
+{
+	ViewLocationBlendPct = 0.0f;
+	InitialViewLocation = CurrentViewLocation;
+	TargetViewLocation = NewTargetOffset;
+}
+
+void UGPCameraMode_ThirdPerson::UpdateViewLocation(float DeltaTime)
+{
+	if (ViewLocationBlendPct < 1.0f)
+	{
+		ViewLocationBlendPct = FMath::Min(ViewLocationBlendPct + DeltaTime * ViewLocationBlendMultiplier, 1.0f);
+		CurrentViewLocation = FMath::InterpEaseInOut(InitialViewLocation, TargetViewLocation, ViewLocationBlendPct, 1.0f);
+	}
+	else
+	{
+		CurrentViewLocation = TargetViewLocation;
+		ViewLocationBlendPct = 1.0f;
 	}
 }

@@ -25,14 +25,15 @@ public:
 protected:
 
 	virtual void UpdateView(float DeltaTime) override;
-
+	FVector GetFocusLocation();
 	void UpdateForTarget(float DeltaTime);
-	void UpdatePreventPenetration(float DeltaTime);
-	void UpdateLookAtRotation(const AActor* OtherActor, FVector const& PivotLocation);
-	FVector GetFocusActorLocation(const AActor* OtherActor);
-	void AdjustCameraIfNecessary(FVector PlayerLocation, FVector EnemyLocation, float DeltaTime);
+	void UpdatePreventPenetration(float DeltaTime); 
+	float CalculateAngleBetweenVectors(const FVector& A, const FVector& B);
+	FVector CalculateMidpoint(FVector const& LocationA, FVector const& LocationB);
+	FRotator CalculateRotationToMidpoint(FVector const& MidPoint, FVector const& ViewLocation);
+	void AdjustCameraIfNecessary(FVector const& LocationA, FVector const& LocationB, FVector ViewLocation, float DeltaTime);
 	bool IsActorInFOV(FVector ActorLocation);
-	float CalculateDistanceToMoveBack(const FVector& PlayerLocation, const FVector& EnemyLocation, float FOVAngle);
+	float CalculateDistanceFromMidpoint(const FVector& PlayerLocation, const FVector& EnemyLocation, const FVector& MidPoint, float FOVAngle);
 	void PreventCameraPenetration(class AActor const& ViewTarget, FVector const& SafeLoc, FVector& CameraLoc, float const& DeltaTime, float& DistBlockedPct, bool bSingleRayOnly);
 
 	virtual void DrawDebug(UCanvas* Canvas) const override;
@@ -48,6 +49,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Third Person")
 	bool bUseRuntimeFloatCurves;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Third Person")
+	bool bUseAutoFocus = true;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Third Person", Meta = (EditCondition = "bUseRuntimeFloatCurves"))
 	FRuntimeFloatCurve TargetOffsetX;
 
@@ -60,6 +64,10 @@ protected:
 	// Alters the speed that a crouch offset is blended in or out
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Third Person")
 	float CrouchOffsetBlendMultiplier = 5.0f;
+
+	// Alters the speed that a crouch offset is blended in or out
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Third Person")
+	float ViewLocationBlendMultiplier = 5.0f;
 
 	// Penetration prevention
 public:
@@ -114,9 +122,16 @@ protected:
 	FVector TargetOffset = FVector::ZeroVector;
 	FVector InitialCrouchOffset = FVector::ZeroVector;
 	FVector TargetCrouchOffset = FVector::ZeroVector;
-	FVector CurrentFOVOffset = FVector::ZeroVector;
 	FVector CurrentCrouchOffset = FVector::ZeroVector;
+
+	float ViewLocationBlendPct = 1.0f;
+	FVector InitialViewLocation = FVector::ZeroVector;
+	FVector TargetViewLocation = FVector::ZeroVector;
+	FVector CurrentViewLocation = FVector::ZeroVector;
 
 	void SetTargetCrouchOffset(FVector NewTargetOffset);
 	void UpdateCrouchOffset(float DeltaTime);
+
+	void SetTargetViewLocation(FVector NewTargetOffset);
+	void UpdateViewLocation(float DeltaTime);
 };

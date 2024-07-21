@@ -27,54 +27,63 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 {
 	Super::UpdateView(DeltaTime);
 
-	// Get the target actor and ensure it's valid.
-	const AActor* TargetActor = GetTargetActor();
-	check(TargetActor);
-
-	// Set initial view properties.
-	CurrentFOVOffset = View.Location;
-	float AngleBetween = 0.0f;
-
-	// Get the current pivot rotation and location.
+	FVector ViewLocation = View.Location;
+	FRotator ViewRotation = View.Rotation;
 	FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
-	FVector LookAtLocation = PivotLocation;
 	FRotator PivotRotation = View.ControlRotation;
 
-	// Determine the focus location based on the focus actor or the target actor.
-	if (FocusActor)
+	// Apply Dynamic offset using ElapsedTime.
+	if (DynamicOffsetCurve)
 	{
-		// Clamp the pitch of the pivot rotation within specified limits.
-		PivotRotation.Pitch = 0.0f;
-
-		// Apply Dynamic offset using ElapsedTime.
-		if (DynamicOffsetCurve)
-		{
-			FVector DynamicOffset = DynamicOffsetCurve->GetVectorValue(ElapsedTime) + TargetOffset;
-			View.Location = PivotLocation + PivotRotation.RotateVector(DynamicOffset);
-			ElapsedTime += DeltaTime;
-			//UE_LOG(LogTemp, Warning, TEXT("PivotLocation = X: %f, Y: %f, Z: %f"), PivotLocation.X, PivotLocation.Y, PivotLocation.Z);
-			//UE_LOG(LogTemp, Warning, TEXT("View.Location = X: %f, Y: %f, Z: %f"), View.Location.X, View.Location.Y, View.Location.Z);
-		}
-
-		UpdateLookAtRotation(FocusActor, PivotLocation);
-		AdjustCameraIfNecessary(PivotLocation, GetFocusActorLocation(FocusActor), DeltaTime);
+		FVector DynamicOffset = DynamicOffsetCurve->GetVectorValue(ElapsedTime) + TargetOffset;
+		ViewLocation = PivotLocation + PivotRotation.RotateVector(DynamicOffset);
+		ElapsedTime += DeltaTime;
+		//UE_LOG(LogTemp, Warning, TEXT("PivotLocation = X: %f, Y: %f, Z: %f"), PivotLocation.X, PivotLocation.Y, PivotLocation.Z);
+		//UE_LOG(LogTemp, Warning, TEXT("View.Location = X: %f, Y: %f, Z: %f"), View.Location.X, View.Location.Y, View.Location.Z);
 	}
-	else if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
-	{
-		// If the target actor is a pawn, get its focus location from a socket if it's a character.
-		if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
-		{
-			if (TargetCharacter->GetMesh()->DoesSocketExist(FocusSocketName))
-			{
-				LookAtLocation = TargetCharacter->GetMesh()->GetSocketLocation(FocusSocketName);
 
-				// Calculate the rotation vector and set the view rotation accordingly
-				FVector RotationVector = LookAtLocation - View.Location;
-				FRotator ViewRotation = RotationVector.Rotation();
-				View.Rotation = ViewRotation;
-			}
-		}
-	}
+	FVector FocusLocation = GetFocusLocation();
+
+	AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
+
+	//// Get the target actor and ensure it's valid.
+	//const AActor* TargetActor = GetTargetActor();
+	//check(TargetActor);
+
+	//// Set initial view properties.
+	//CurrentFOVOffset = View.Location;
+	//float AngleBetween = 0.0f;
+
+	//// Get the current pivot rotation and location.
+	//FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
+	//FVector LookAtLocation = PivotLocation;
+	//FRotator PivotRotation = View.ControlRotation;
+
+	//// Determine the focus location based on the focus actor or the target actor.
+	//if (FocusActor)
+	//{
+	//	// Clamp the pitch of the pivot rotation within specified limits.
+	//	PivotRotation.Pitch = 0.0f;
+
+	//	CalculateRotationToMidpoint(FocusActor, PivotLocation);
+	//	AdjustCameraIfNecessary(PivotLocation, GetFocusActorLocation(FocusActor), DeltaTime);
+	//}
+	//else if (const APawn* TargetPawn = Cast<APawn>(TargetActor))
+	//{
+	//	// If the target actor is a pawn, get its focus location from a socket if it's a character.
+	//	if (const ACharacter* TargetCharacter = Cast<ACharacter>(TargetPawn))
+	//	{
+	//		if (TargetCharacter->GetMesh()->DoesSocketExist(FocusSocketName))
+	//		{
+	//			LookAtLocation = TargetCharacter->GetMesh()->GetSocketLocation(FocusSocketName);
+
+	//			// Calculate the rotation vector and set the view rotation accordingly
+	//			FVector RotationVector = LookAtLocation - View.Location;
+	//			FRotator ViewRotation = RotationVector.Rotation();
+	//			View.Rotation = ViewRotation;
+	//		}
+	//	}
+	//}
 
 	//UE_LOG(LogTemp, Warning, TEXT("View.Rotation =  Pitch: %f, Yaw: %f"), View.Rotation.Pitch, View.Rotation.Yaw);
 
