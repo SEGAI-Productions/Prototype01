@@ -2,7 +2,7 @@
 
 
 #include "Core/Camera/GPCameraMode.h"
-
+#include "Core/Camera/SegaiCameraManager.h"
 #include "Curves/CurveVector.h"
 #include "Core/Camera/GPCameraMode_Dynamic.h"
 #include "Components/CapsuleComponent.h"

@@ -19,6 +19,7 @@ class GAMEA_PROTOTYPE_API ASegaiPlayerController : public APlayerController, pub
 	GENERATED_BODY()
 
 public:
+	ASegaiPlayerController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 #pragma region APlayerController interface
 	virtual void UpdateHiddenComponents(const FVector& ViewLocation, TSet<FPrimitiveComponentId>& OutHiddenComponents) override;

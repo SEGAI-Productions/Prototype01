@@ -31,7 +31,6 @@ UGPCameraMode_ThirdPerson::UGPCameraMode_ThirdPerson()
 	PenetrationAvoidanceFeelers.Add(FSegaiPenetrationAvoidanceFeeler(FRotator(+00.0f, -32.0f, 0.0f), 0.50f, 0.50f, 00.f, 5));
 	PenetrationAvoidanceFeelers.Add(FSegaiPenetrationAvoidanceFeeler(FRotator(+20.0f, +00.0f, 0.0f), 1.00f, 1.00f, 00.f, 4));
 	PenetrationAvoidanceFeelers.Add(FSegaiPenetrationAvoidanceFeeler(FRotator(-20.0f, +00.0f, 0.0f), 0.50f, 0.50f, 00.f, 4));
-
 }
 
 void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
@@ -202,7 +201,6 @@ FVector UGPCameraMode_ThirdPerson::CalculateMidpoint(FVector const& LocationA, F
 	FVector MidPoint = (LocationA + LocationB) / 2;
 	return MidPoint;
 }
-
 
 FRotator UGPCameraMode_ThirdPerson::CalculateRotationToMidpoint(FVector const& MidPoint, FVector const& ViewLocation)
 {

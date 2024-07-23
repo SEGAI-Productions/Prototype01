@@ -2,6 +2,17 @@
 
 
 #include "Core/Components/SegaiPlayerController.h"
+#include "Core/Camera/SegaiCameraManager.h"
+
+ASegaiPlayerController::ASegaiPlayerController(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	PlayerCameraManagerClass = ASegaiCameraManager::StaticClass();
+
+//#if USING_CHEAT_MANAGER
+//	CheatClass = ULyraCheatManager::StaticClass();
+//#endif // #if USING_CHEAT_MANAGER
+}
 
 void ASegaiPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TSet<FPrimitiveComponentId>& OutHiddenComponents)
 {

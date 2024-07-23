@@ -103,7 +103,7 @@ public:
 	 *             were to rotate towards that direction and primitively collide the camera so that it pulls in before
 	 *             impacting the occluder.
 	 */
-	//UPROPERTY(EditDefaultsOnly, Category = "Collision")
+	UPROPERTY(EditDefaultsOnly, Category = "Collision")
 	TArray<FSegaiPenetrationAvoidanceFeeler> PenetrationAvoidanceFeelers;
 
 	UPROPERTY(Transient)
