@@ -57,6 +57,12 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 		if (TargetOffsetCurve)
 		{
 			TargetOffset = TargetOffsetCurve->GetVectorValue(PivotRotation.Pitch);
+
+			if (FocusActor)
+			{
+				TargetOffset.Y += 60.0f;
+				TargetOffset.Z += 100.0f;
+			}
 			ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 		}
 	}
