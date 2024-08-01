@@ -33,7 +33,7 @@ protected:
 	FRotator CalculateRotationToMidpoint(FVector const& MidPoint, FVector const& ViewLocation);
 	void AdjustCameraIfNecessary(FVector const& LocationA, FVector const& LocationB, FVector ViewLocation, float DeltaTime);
 	bool IsActorInFOV(FVector ActorLocation);
-	float CalculateDistanceFromMidpoint(const FVector& PlayerLocation, const FVector& EnemyLocation, const FVector& MidPoint, float FOVAngle);
+	float CalculateMinDistanceFromMidpoint(const FVector& PlayerLocation, const FVector& EnemyLocation, const FVector& MidPoint, float FOVAngle);
 	void PreventCameraPenetration(class AActor const& ViewTarget, FVector const& SafeLoc, FVector& CameraLoc, float const& DeltaTime, float& DistBlockedPct, bool bSingleRayOnly);
 
 	virtual void DrawDebug(UCanvas* Canvas) const override;
@@ -117,6 +117,9 @@ public:
 #endif
 
 protected:
+
+	float CurrentAngle = 0.0f;
+	float AdjustedAngle = 0.0f;
 
 	float CrouchOffsetBlendPct = 1.0f;
 	FVector TargetOffset = FVector::ZeroVector;

@@ -75,9 +75,9 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 		ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 	}
 
-	FVector FocusLocation = GetFocusLocation();
 	View.Location = ViewLocation;
 
+	FVector FocusLocation = GetFocusLocation();
 	AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
 
 	// Adjust final desired camera location to prevent any penetration
@@ -221,29 +221,49 @@ void UGPCameraMode_ThirdPerson::AdjustCameraIfNecessary(FVector const& LocationA
 {
 	if (!bUseAutoFocus) return;
 
-	float angle = CalculateAngleBetweenVectors(LocationA - ViewLocation, LocationB - ViewLocation);
-
 	FVector MidPoint = CalculateMidpoint(LocationA, LocationB);
 
 	// Set rotation of the camera to look at midpoint
 	FRotator ViewRotation = CalculateRotationToMidpoint(MidPoint, ViewLocation);
+
+	float MinAngle = 30;
+	CurrentViewLocation = View.Location;
+	CurrentAngle = CalculateAngleBetweenVectors(LocationA - CurrentViewLocation, LocationB - CurrentViewLocation);
+
+	if (CurrentAngle < MinAngle)
+	{
+		//FRotator NewRotation(View.Rotation.Pitch, View.Rotation.Yaw * (ViewRotation.Yaw - (MinAngle - CurrentAngle)), ViewRotation.Roll);
+		FRotator NewRotation(ViewRotation.Pitch, ViewRotation.Yaw - (MinAngle - CurrentAngle), ViewRotation.Roll);
+		ViewRotation = NewRotation;
+		//ViewRotation = FMath::RInterpTo(ViewRotation, NewRotation, DeltaTime, InterpolationSpeed);
+	}
+
+#if ENABLE_DRAW_DEBUG
+
+	UWorld* World = GetWorld();
+	//FVector ForwardVector = (CurrentViewLocation + FVector::ForwardVector) - ViewLocation;
+	DrawDebugSphere(World, CurrentViewLocation, 10, 8, FColor::Blue);
+	//DrawDebugLine(World, CurrentViewLocation, View.Rotation.RotateVector(ForwardVector), FColor::Blue);
+
+#endif
+
 	View.Rotation = ViewRotation;
 
+	// Calculate the view direction and new camera position
+	FVector ViewForwardVector = ViewRotation.Vector();
+
 	// Calculate the min distance from midpoint to have both actors in FOV
-	float DistanceToMoveBack = CalculateDistanceFromMidpoint(LocationA, LocationB, MidPoint, View.FieldOfView);
+	float MinDistanceFromMidpoint = CalculateMinDistanceFromMidpoint(LocationA, LocationB, MidPoint, View.FieldOfView);
 
 	float CurrentDist = FVector::Dist(ViewLocation, MidPoint);
-	//UE_LOG(LogTemp, Warning, TEXT("Dist: %f, %f"), CurrentDist, DistanceToMoveBack);
-	DistanceToMoveBack = FMath::Max(DistanceToMoveBack, CurrentDist);
 
-	// Calculate the view direction and new camera position
-	FVector ViewForward = ViewRotation.Vector();
-	FVector MovementDirection = ViewForward;
+	float DesiredDistanceFromMidpoint = FMath::Max(MinDistanceFromMidpoint, CurrentDist);
 
 	// Adjust camera position by moving back
-	FVector NewViewLocation = MidPoint - (ViewForward * DistanceToMoveBack);
-
+	FVector NewViewLocation = MidPoint - (ViewForwardVector * DesiredDistanceFromMidpoint);
+	AdjustedAngle = CalculateAngleBetweenVectors(LocationA - NewViewLocation, LocationB - NewViewLocation);
 	View.Location = NewViewLocation;
+
 
 	// TODO
 	// Smooth out the camera transition and rotation
@@ -261,11 +281,11 @@ bool UGPCameraMode_ThirdPerson::IsActorInFOV(FVector ActorLocation)
 	float DotProduct = FVector::DotProduct(ForwardVector, Direction);
 	float FOV = View.FieldOfView / 2;
 
-	float Angle = FMath::Acos(DotProduct) * (180.0f / PI);
-	return Angle <= (FOV / 2.0f);
+	float AngleFromView = FMath::Acos(DotProduct) * (180.0f / PI);
+	return AngleFromView <= (FOV / 2.0f);
 }
 
-float UGPCameraMode_ThirdPerson::CalculateDistanceFromMidpoint(const FVector& PlayerLocation, const FVector& EnemyLocation, const FVector& MidPoint, float FOVAngle)
+float UGPCameraMode_ThirdPerson::CalculateMinDistanceFromMidpoint(const FVector& PlayerLocation, const FVector& EnemyLocation, const FVector& MidPoint, float FOVAngle)
 {
 	// Clamp the pitch to the range [ViewPitchMin, ViewPitchMax]
 	float Pitch = FMath::Clamp(View.ControlRotation.Pitch, ViewPitchMin, ViewPitchMax);
@@ -282,13 +302,13 @@ float UGPCameraMode_ThirdPerson::CalculateDistanceFromMidpoint(const FVector& Pl
 	float curvedT = FMath::Pow(t, 0.1f); // Adjust the exponent to control the curve
 
 	// Interpolate the angle
-	float AdjustedAngle = FMath::Lerp(AngleAtZeroPitch, AngleAtExtremePitch, curvedT);
+	float OffsetAngle = FMath::Lerp(AngleAtZeroPitch, AngleAtExtremePitch, curvedT);
 
 	// Calculate the distance between the player and enemy
 	float DistanceBetweenActors = FVector::Dist(PlayerLocation, EnemyLocation);
 
-	// Calculate the minimum distance to move back based on the AdjustedAngle
-	float DistanceToMoveBack = (DistanceBetweenActors / 2.0f) / FMath::Tan(FMath::DegreesToRadians(AdjustedAngle));
+	// Calculate the minimum distance to move back based on the OffsetAngle
+	float DistanceToMoveBack = (DistanceBetweenActors / 2.0f) / FMath::Tan(FMath::DegreesToRadians(OffsetAngle));
 
 	return DistanceToMoveBack;
 }
@@ -365,7 +385,8 @@ void UGPCameraMode_ThirdPerson::PreventCameraPenetration(class AActor const& Vie
 			{
 				bool bIgnoreHit = false;
 
-				if (HitActor->ActorHasTag(GPCameraMode_ThirdPerson_Statics::NAME_IgnoreCameraCollision))
+				if (Cast<APawn>(HitActor))
+				//if (HitActor->ActorHasTag(GPCameraMode_ThirdPerson_Statics::NAME_IgnoreCameraCollision))
 				{
 					bIgnoreHit = true;
 					SphereParams.AddIgnoredActor(HitActor);
@@ -485,6 +506,14 @@ void UGPCameraMode_ThirdPerson::DrawDebug(UCanvas* Canvas) const
 				, i
 				, *DebugActorsHitDuringCameraPenetration[i]->GetName()));
 	}
+
+	DisplayDebugManager.DrawString(
+		FString::Printf(TEXT("Current Target Actors Angle: %f")
+			, CurrentAngle));
+
+	DisplayDebugManager.DrawString(
+		FString::Printf(TEXT("Adjusted Target Actors Angle: %f")
+			, AdjustedAngle));
 
 	LastDrawDebugTime = GetWorld()->GetTimeSeconds();
 #endif

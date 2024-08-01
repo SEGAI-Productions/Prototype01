@@ -200,7 +200,7 @@ void UGPCameraMode::UpdateView(float DeltaTime)
 
 	View.Location = PivotLocation;
 	View.Rotation = PivotRotation;
-	View.ControlRotation = View.Rotation;
+	View.ControlRotation = PivotRotation;
 	View.FieldOfView = FieldOfView;
 }
 
