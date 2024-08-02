@@ -27,6 +27,8 @@ void UGPCameraMode_Dynamic::UpdateView(float DeltaTime)
 {
 	Super::UpdateView(DeltaTime);
 
+	if (!DynamicOffsetCurve) return;
+
 	FVector ViewLocation = View.Location;
 	FRotator ViewRotation = View.Rotation;
 	FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
