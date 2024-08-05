@@ -7,7 +7,7 @@
 #include "EventBindingsSubsystem.generated.h"
 
 USTRUCT(BlueprintType)
-struct FDamageResult
+struct FEBSDamageResult
 {
 	GENERATED_BODY()
 
@@ -19,7 +19,10 @@ public:
 	AActor* Target;
 
 	UPROPERTY(BlueprintReadWrite)
-	float Damage;
+	float DamageDealt;
+
+	UPROPERTY(BlueprintReadWrite)
+	float DamageAssigned;
 };
 
 /**
@@ -30,13 +33,13 @@ class GAMEA_PROTOTYPE_API UEventBindingsSubsystem : public UGameInstanceSubsyste
 {
 	GENERATED_BODY()
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDamageResultDynamicDelegate, const FDamageResult&, DamageResult);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEBSDamageResultDynamicDelegate, const FEBSDamageResult&, DamageResult);
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void HandleDamageInstigated(FDamageResult DamageResult);
+	void HandleEBSDamageResult(FEBSDamageResult DamageResult);
 
 	UPROPERTY(BlueprintAssignable)
-	FDamageResultDynamicDelegate OnDamageInstigatedDynamic;
+	FEBSDamageResultDynamicDelegate OnEBSDamageResultDynamic;
 	
 };

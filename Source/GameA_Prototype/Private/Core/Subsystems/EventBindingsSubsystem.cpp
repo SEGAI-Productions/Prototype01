@@ -3,7 +3,7 @@
 
 #include "Core/Subsystems/EventBindingsSubsystem.h"
 
-void UEventBindingsSubsystem::HandleDamageInstigated(FDamageResult DamageResult)
+void UEventBindingsSubsystem::HandleEBSDamageResult(FEBSDamageResult DamageResult)
 {
-	OnDamageInstigatedDynamic.Broadcast(DamageResult);
+	OnEBSDamageResultDynamic.Broadcast(DamageResult);
 }
