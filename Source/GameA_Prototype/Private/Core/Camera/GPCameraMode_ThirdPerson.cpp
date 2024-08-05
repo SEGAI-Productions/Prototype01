@@ -51,6 +51,12 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	View.Rotation = PivotRotation;
 	View.FieldOfView = FieldOfView;
 
+#pragma region CameraLag
+
+	UpdateCameraLag(DeltaTime, PivotLocation, PivotRotation);
+
+#pragma endregion
+
 	// Apply third person offset using pitch.
 	if (!bUseRuntimeFloatCurves)
 	{
@@ -60,9 +66,10 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 
 			if (FocusActor)
 			{
-				TargetOffset.Y += 60.0f;
-				TargetOffset.Z += 100.0f;
+				TargetOffset.Y += 60.0f * (TargetOffset.Y / TargetOffset.Y);
+				TargetOffset.Z += 100.0f * (TargetOffset.Z / TargetOffset.Z);
 			}
+
 			ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 		}
 	}
