@@ -247,9 +247,14 @@ void UGPCameraMode_ThirdPerson::AdjustCameraIfNecessary(FVector const& LocationA
 
 #if ENABLE_DRAW_DEBUG
 
+
 	UWorld* World = GetWorld();
 	//FVector ForwardVector = (CurrentViewLocation + FVector::ForwardVector) - ViewLocation;
-	DrawDebugSphere(World, CurrentViewLocation, 10, 8, FColor::Blue);
+	DrawDebugSphere(World, MidPoint, 10, 8, FColor::Blue);
+	DrawDebugLine(World, LocationA, LocationB, FColor::Blue);
+	float Distance = FVector::Distance(LocationA, LocationB);
+	DrawDebugString(World, LocationB + FVector(0.0f, 10.0f, 0.0f), FString::Printf(TEXT("Nearest Enemy Distance: (%f)"), Distance),(AActor*)0, Distance < 10 ? FColor::Red : FColor::White, DeltaTime, false, 1.0f);
+	//DrawDebugSphere(World, CurrentViewLocation, 10, 8, FColor::Blue);
 	//DrawDebugLine(World, CurrentViewLocation, View.Rotation.RotateVector(ForwardVector), FColor::Blue);
 
 #endif
