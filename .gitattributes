@@ -1,1 +1,2 @@
 Content/LFS_FileLockingTest.uasset filter=lfs diff=lfs merge=lfs -text
+*.uasset lockable
