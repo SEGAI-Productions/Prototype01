@@ -62,6 +62,11 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	{
 		if (TargetOffsetCurve)
 		{
+//#if ENABLE_DRAW_DEBUG
+//
+//			UWorld* World = GetWorld();
+//			DrawDebugString(World, PivotLocation + FVector(0.0f, 10.0f, 0.0f), FString::Printf(TEXT("Camera Pitch: (%f)"), PivotRotation.Pitch), (AActor*)0, FColor::White, DeltaTime, false, 1.0f);
+//#endif
 			TargetOffset = TargetOffsetCurve->GetVectorValue(PivotRotation.Pitch);
 
 			if (FocusActor)
@@ -245,19 +250,19 @@ void UGPCameraMode_ThirdPerson::AdjustCameraIfNecessary(FVector const& LocationA
 		//ViewRotation = FMath::RInterpTo(ViewRotation, NewRotation, DeltaTime, InterpolationSpeed);
 	}
 
-#if ENABLE_DRAW_DEBUG
-
-
-	UWorld* World = GetWorld();
-	//FVector ForwardVector = (CurrentViewLocation + FVector::ForwardVector) - ViewLocation;
-	DrawDebugSphere(World, MidPoint, 10, 8, FColor::Blue);
-	DrawDebugLine(World, LocationA, LocationB, FColor::Blue);
-	float Distance = FVector::Distance(LocationA, LocationB);
-	DrawDebugString(World, LocationB + FVector(0.0f, 10.0f, 0.0f), FString::Printf(TEXT("Nearest Enemy Distance: (%f)"), Distance),(AActor*)0, Distance < 10 ? FColor::Red : FColor::White, DeltaTime, false, 1.0f);
-	//DrawDebugSphere(World, CurrentViewLocation, 10, 8, FColor::Blue);
-	//DrawDebugLine(World, CurrentViewLocation, View.Rotation.RotateVector(ForwardVector), FColor::Blue);
-
-#endif
+//#if ENABLE_DRAW_DEBUG
+//
+//
+//	UWorld* World = GetWorld();
+//	//FVector ForwardVector = (CurrentViewLocation + FVector::ForwardVector) - ViewLocation;
+//	DrawDebugSphere(World, MidPoint, 10, 8, FColor::Blue);
+//	DrawDebugLine(World, LocationA, LocationB, FColor::Blue);
+//	float Distance = FVector::Distance(LocationA, LocationB);
+//	DrawDebugString(World, LocationB + FVector(0.0f, 10.0f, 0.0f), FString::Printf(TEXT("Nearest Enemy Distance: (%f)"), Distance),(AActor*)0, Distance < 10 ? FColor::Red : FColor::White, DeltaTime, false, 1.0f);
+//	//DrawDebugSphere(World, CurrentViewLocation, 10, 8, FColor::Blue);
+//	//DrawDebugLine(World, CurrentViewLocation, View.Rotation.RotateVector(ForwardVector), FColor::Blue);
+//
+//#endif
 
 	View.Rotation = ViewRotation;
 
