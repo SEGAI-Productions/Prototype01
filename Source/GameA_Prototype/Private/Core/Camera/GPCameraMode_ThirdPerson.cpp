@@ -48,7 +48,7 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	FVector ViewLocation = PivotLocation;
 	View.Location = PivotLocation;
 	FRotator ViewRotation = PivotRotation;
-	View.Rotation = PivotRotation;
+	View.Rotation = FRotator::ZeroRotator;
 	View.FieldOfView = FieldOfView;
 
 #pragma region CameraLag
@@ -69,13 +69,11 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 //#endif
 			TargetOffset = TargetOffsetCurve->GetVectorValue(PivotRotation.Pitch);
 
-			if (FocusActor)
+			if (FocusActor && bUseAutoViewCorrection)
 			{
 				TargetOffset.Y += 60.0f * (TargetOffset.Y / TargetOffset.Y);
 				TargetOffset.Z += 100.0f * (TargetOffset.Z / TargetOffset.Z);
 			}
-
-			ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 		}
 	}
 	else
@@ -83,14 +81,31 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 		TargetOffset.X = TargetOffsetX.GetRichCurveConst()->Eval(PivotRotation.Pitch);
 		TargetOffset.Y = TargetOffsetY.GetRichCurveConst()->Eval(PivotRotation.Pitch);
 		TargetOffset.Z = TargetOffsetZ.GetRichCurveConst()->Eval(PivotRotation.Pitch);
-
-		ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 	}
 
+	if (ViewPitchMin == ViewPitchMax)
+	{
+		TargetOffset.X = -1 * FMath::Sqrt(FMath::Square(TargetOffset.X) + FMath::Square(TargetOffset.Z));
+		TargetOffset.Z = 0.0f;
+	}
+
+	ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
+
+#if ENABLE_DRAW_DEBUG
+	UWorld* World = GetWorld();
+	DrawDebugSphere(World, ViewLocation, 10, 8, FColor::Green);
+#endif
+
 	View.Location = ViewLocation;
+	View.Rotation = PivotRotation;
 
 	FVector FocusLocation = GetFocusLocation();
-	AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
+
+
+	if (bUseAutoViewCorrection)
+	{
+		AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
+	}
 
 	// Adjust final desired camera location to prevent any penetration
 	UpdatePreventPenetration(DeltaTime);
