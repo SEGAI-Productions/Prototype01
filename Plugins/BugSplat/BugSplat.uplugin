@@ -10,7 +10,7 @@
 	"DocsURL": "https://docs.bugsplat.com/introduction/getting-started/integrations/game-development/unreal-engine#unreal-engine-plugin",
 	"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/f26128f947f5471fa7d24184545b3d09",
 	"SupportURL": "https://www.bugsplat.com",
-	"EngineVersion": "5.4.0",
+	"EngineVersion": "5.5",
 	"CanContainContent": true,
 	"Installed": true,
 	"Modules": [
