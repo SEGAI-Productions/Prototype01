@@ -52,6 +52,24 @@ void UGPCameraComponent::SetFocusObject(TSubclassOf<UGPCameraMode> CameraMode, A
 	if (CameraMode) CameraModeStack->SetFocusObject(CameraMode, NewFocusObject);
 }
 
+void UGPCameraComponent::SetFocusObjectList(TSubclassOf<UGPCameraMode> CameraMode, const TArray<AActor*>& NewFocusList)
+{
+	TArray<TSoftObjectPtr<AActor>> SoftList;
+
+	for (AActor* Actor : NewFocusList)
+	{
+		if (IsValid(Actor))  // Ensure the actor is valid before converting
+		{
+			SoftList.Add(Actor);
+		}
+	}
+
+	if (NewFocusList.Num() > 1)
+	{
+		if (CameraMode) CameraModeStack->SetFocusList(CameraMode, SoftList);
+	}
+}
+
 void UGPCameraComponent::SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraMode, UCurveVector* DynamicOffset)
 {
 	if (CameraMode) CameraModeStack->SetDynamicOffsetCurve(CameraMode, DynamicOffset);

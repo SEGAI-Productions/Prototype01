@@ -10,6 +10,7 @@
 #include "GameFramework/Character.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Core/Camera/GPCameraComponent.h"
+#include <DrawDebugHelpers.h>
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GPCameraMode)
 
@@ -63,6 +64,16 @@ UGPCameraMode::UGPCameraMode()
 	BlendExponent = 4.0f;
 	BlendAlpha = 1.0f;
 	BlendWeight = 1.0f;
+}
+
+void UGPCameraMode::SetFocusList(const TArray<TSoftObjectPtr<AActor>>& NewList)
+{
+	UE_LOG(LogTemp, Warning, TEXT("SetFocusList called on instance: %s (%p) with %d elements"),
+		*GetName(), this, FocusActorList.Num());
+
+	FocusActorList = NewList;
+
+	UE_LOG(LogTemp, Warning, TEXT("FocusActorList Size After Assignment: %d"), FocusActorList.Num());
 }
 
 UGPCameraComponent* UGPCameraMode::GetGPCameraComponent() const
@@ -144,6 +155,60 @@ void UGPCameraMode::DrawDebug(UCanvas* Canvas) const
 		DisplayDebugManager.SetDrawColor(FColor::White);
 		DisplayDebugManager.DrawString(FString::Printf(TEXT("      GPCameraMode: %s (%f)"), *GetName(), BlendWeight));
 	}
+}
+
+FVector UGPCameraMode::CalculateOptimalCameraPosition(float DeltaTime)
+{
+	const AActor* TargetActor = GetTargetActor();
+	check(TargetActor);
+
+	FVector Center = TargetActor->GetActorLocation();
+	FBox Bounds(Center, Center);
+
+	for (TSoftObjectPtr<AActor> Enemy : FocusActorList)
+	{
+		if (Enemy)
+		{
+			Bounds += Enemy->GetActorLocation();
+		}
+	}
+
+	// Expand bounds slightly for padding
+	Bounds = Bounds.ExpandBy(200.0f);
+
+	FVector CenterPoint = Bounds.GetCenter();
+	CenterPoint.Z = GetPivotLocation().Z;
+	Bounds = Bounds.MoveTo(CenterPoint);
+
+	FVector Extents = FVector::Zero();
+	Bounds.GetCenterAndExtents(CenterPoint, Extents);
+
+	OptimalDistance = CalculateOptimalCameraDistance(CenterPoint, FieldOfView, Bounds); // 90-degree FOV
+
+#if ENABLE_DRAW_DEBUG
+	UWorld* World = GetWorld();
+
+	DrawDebugBox(World, CenterPoint, Extents, FColor::Magenta, false, -1.0f, (uint8)0U, 8.0f);
+
+	DrawDebugSphere(World, CenterPoint, OptimalDistance, 20, FColor::Magenta);
+#endif
+
+	return CenterPoint;
+}
+
+float UGPCameraMode::CalculateOptimalCameraDistance(const FVector& Center, float FOV, FBox Box) const
+{
+	float MaxDistance = 0.0f;
+
+	for (TSoftObjectPtr<AActor> Actor : FocusActorList)
+	{
+		if (!Actor)
+			continue;
+
+		MaxDistance = FVector::Dist(Box.Max, Center);
+	}
+
+	return MaxDistance / FMath::Tan(FMath::DegreesToRadians(FOV / 2.0f));
 }
 
 FVector UGPCameraMode::GetPivotLocation() const
@@ -579,6 +644,16 @@ void UGPCameraModeStack::SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeCla
 	if (cameraMode)
 	{
 		cameraMode->SetFocusActor(NewFocusObject);
+	}
+}
+
+void UGPCameraModeStack::SetFocusList(TSubclassOf<UGPCameraMode> CameraModeClass, const TArray<TSoftObjectPtr<AActor>>& NewActorList)
+{
+	UGPCameraMode* cameraMode = GetCameraModeInstance(CameraModeClass);
+
+	if (cameraMode)
+	{
+		cameraMode->SetFocusList(NewActorList);
 	}
 }
 

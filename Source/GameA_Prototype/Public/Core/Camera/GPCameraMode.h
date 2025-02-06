@@ -72,6 +72,9 @@ public:
 
 	UGPCameraMode();
 
+	/** Sets the list of enemy characters */
+	virtual void SetFocusList(const TArray<TSoftObjectPtr<AActor>>& NewList);
+
 	UGPCameraComponent* GetGPCameraComponent() const;
 
 	virtual UWorld* GetWorld() const override;
@@ -103,6 +106,12 @@ public:
 
 protected:
 
+	/** Calculates the optimal camera position */
+	FVector CalculateOptimalCameraPosition(float DeltaTime);
+
+	/** Calculates the required distance to fit all actors */
+	virtual float CalculateOptimalCameraDistance(const FVector& Center, float FOV, FBox Box) const;
+
 	virtual FVector GetPivotLocation() const;
 	virtual FRotator GetPivotRotation() const;
 
@@ -110,6 +119,10 @@ protected:
 	virtual void UpdateBlending(float DeltaTime);
 
 protected:
+	/** List of enemies */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Transient, Category = "Tracking")
+	TArray<TSoftObjectPtr<AActor>> FocusActorList;
+
 	// A tag that can be queried by gameplay code that cares when a kind of camera mode is active
 	// without having to ask about a specific mode (e.g., when aiming downsights to get more accuracy)
 	UPROPERTY(EditDefaultsOnly, Category = "Blending")
@@ -142,11 +155,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Blending")
 	float BlendExponent;
 
+	// Alters the speed that a crouch offset is blended in or out
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic")
+	float MovementInterpolationSpeed = .5f;
+
 	// Linear blend alpha used to determine the blend weight.
 	float BlendAlpha;
 
 	// Blend weight calculated using the blend alpha and function.
 	float BlendWeight;
+
+	float OptimalDistance;
 
 	AActor* FocusActor = nullptr;
 	FName FocusSocketName;
@@ -243,6 +262,7 @@ public:
 	// Gets the tag associated with the top layer and the blend weight of it
 	void GetBlendInfo(float& OutWeightOfTopLayer, FGameplayTag& OutTagOfTopLayer) const;
 	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeClass, AActor* NewFocusObject);
+	void SetFocusList(TSubclassOf<UGPCameraMode> CameraModeClass, const TArray<TSoftObjectPtr<AActor>>& NewActorList);
 	void SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraMode, TObjectPtr<UCurveVector> DynamicOffset);
 	void FocusSocketByName(TSubclassOf<UGPCameraMode> CameraMode, FName FocusSocket);
 

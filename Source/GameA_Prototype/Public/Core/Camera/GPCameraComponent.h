@@ -41,6 +41,9 @@ public:
 	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraMode, AActor* NewFocusObject);
 
 	UFUNCTION(BlueprintCallable)
+	void SetFocusObjectList(TSubclassOf<UGPCameraMode> CameraMode, const TArray<AActor*>& NewFocusList);
+
+	UFUNCTION(BlueprintCallable)
 	void SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraMode, UCurveVector* DynamicOffset);
 
 	UFUNCTION(BlueprintCallable)

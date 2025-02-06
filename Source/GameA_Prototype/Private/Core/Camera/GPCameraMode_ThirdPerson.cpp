@@ -35,6 +35,16 @@ UGPCameraMode_ThirdPerson::UGPCameraMode_ThirdPerson()
 
 void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 {
+	/*
+	UE_LOG(LogTemp, Warning, TEXT("UpdateView called on instance: %s (%p), FocusActorList Size: %d"),
+		*GetName(), this, FocusActorList.Num());
+
+	if (FocusActorList.Num() == 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FocusActorList is empty in UpdateView!"));
+	}
+	*/
+
 	UpdateForTarget(DeltaTime);
 	UpdateCrouchOffset(DeltaTime);
 
@@ -92,8 +102,8 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 
 #if ENABLE_DRAW_DEBUG
-	UWorld* World = GetWorld();
-	DrawDebugSphere(World, ViewLocation, 10, 8, FColor::Green);
+	//UWorld* World = GetWorld();
+	//DrawDebugSphere(World, ViewLocation, 10, 8, FColor::Green);
 #endif
 
 	View.Location = ViewLocation;
@@ -101,14 +111,35 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 
 	FVector FocusLocation = GetFocusLocation();
 
-
 	if (bUseAutoViewCorrection)
 	{
-		AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
+
+		if (FocusActorList.Num() > 1)
+		{
+			FCollisionShape SphereShape = FCollisionShape::MakeSphere(8.f);
+
+			// Compute optimal camera position
+			FVector CenterPoint = CalculateOptimalCameraPosition(DeltaTime);
+
+			ViewLocation = CenterPoint + (View.Rotation.Vector() * OptimalDistance * -1);
+
+			View.Location = ViewLocation;
+
+#if ENABLE_DRAW_DEBUG
+			//DrawDebugSphere(World, ViewLocation, 10, 8, FColor::Yellow, false, DeltaTime, (uint8)0U, 2);
+#endif
+
+		}
+		else
+		{
+			AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
+		}
+
 	}
 
 	// Adjust final desired camera location to prevent any penetration
 	UpdatePreventPenetration(DeltaTime);
+	View.Rotation = PivotRotation;
 }
 
 FVector UGPCameraMode_ThirdPerson::GetFocusLocation()
@@ -279,6 +310,7 @@ void UGPCameraMode_ThirdPerson::AdjustCameraIfNecessary(FVector const& LocationA
 //
 //#endif
 
+	View.Rotation = FRotator(ViewRotation);
 	View.Rotation = ViewRotation;
 
 	// Calculate the view direction and new camera position
