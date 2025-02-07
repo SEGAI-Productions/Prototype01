@@ -186,11 +186,11 @@ FVector UGPCameraMode::CalculateOptimalCameraPosition(float DeltaTime)
 	OptimalDistance = CalculateOptimalCameraDistance(CenterPoint, FieldOfView, Bounds); // 90-degree FOV
 
 #if ENABLE_DRAW_DEBUG
-	UWorld* World = GetWorld();
+	//UWorld* World = GetWorld();
 
-	DrawDebugBox(World, CenterPoint, Extents, FColor::Magenta, false, -1.0f, (uint8)0U, 8.0f);
+	//DrawDebugBox(World, CenterPoint, Extents, FColor::Magenta, false, -1.0f, (uint8)0U, 8.0f);
 
-	DrawDebugSphere(World, CenterPoint, OptimalDistance, 20, FColor::Magenta);
+	//DrawDebugSphere(World, CenterPoint, OptimalDistance, 20, FColor::Magenta);
 #endif
 
 	return CenterPoint;

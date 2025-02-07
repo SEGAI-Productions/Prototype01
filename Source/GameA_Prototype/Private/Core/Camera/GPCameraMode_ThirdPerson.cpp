@@ -35,16 +35,6 @@ UGPCameraMode_ThirdPerson::UGPCameraMode_ThirdPerson()
 
 void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 {
-	/*
-	UE_LOG(LogTemp, Warning, TEXT("UpdateView called on instance: %s (%p), FocusActorList Size: %d"),
-		*GetName(), this, FocusActorList.Num());
-
-	if (FocusActorList.Num() == 0)
-	{
-		UE_LOG(LogTemp, Error, TEXT("FocusActorList is empty in UpdateView!"));
-	}
-	*/
-
 	UpdateForTarget(DeltaTime);
 	UpdateCrouchOffset(DeltaTime);
 
