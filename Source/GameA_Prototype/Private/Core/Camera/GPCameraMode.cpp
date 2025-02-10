@@ -68,12 +68,7 @@ UGPCameraMode::UGPCameraMode()
 
 void UGPCameraMode::SetFocusList(const TArray<TSoftObjectPtr<AActor>>& NewList)
 {
-	UE_LOG(LogTemp, Warning, TEXT("SetFocusList called on instance: %s (%p) with %d elements"),
-		*GetName(), this, FocusActorList.Num());
-
 	FocusActorList = NewList;
-
-	UE_LOG(LogTemp, Warning, TEXT("FocusActorList Size After Assignment: %d"), FocusActorList.Num());
 }
 
 UGPCameraComponent* UGPCameraMode::GetGPCameraComponent() const
@@ -159,6 +154,8 @@ void UGPCameraMode::DrawDebug(UCanvas* Canvas) const
 
 FVector UGPCameraMode::CalculateOptimalCameraPosition(float DeltaTime)
 {
+	if (FocusActorList.Num() < 2) return FVector::Zero();
+
 	const AActor* TargetActor = GetTargetActor();
 	check(TargetActor);
 
@@ -187,10 +184,10 @@ FVector UGPCameraMode::CalculateOptimalCameraPosition(float DeltaTime)
 
 #if ENABLE_DRAW_DEBUG
 	//UWorld* World = GetWorld();
+	
+	//DrawDebugBox(World, CenterPoint, Extents, FColor::Magenta, false, DeltaTime, (uint8)0U, 2);
 
-	//DrawDebugBox(World, CenterPoint, Extents, FColor::Magenta, false, -1.0f, (uint8)0U, 8.0f);
-
-	//DrawDebugSphere(World, CenterPoint, OptimalDistance, 20, FColor::Magenta);
+	//DrawDebugSphere(World, CenterPoint, OptimalDistance, 20, FColor::Magenta, false, DeltaTime, (uint8)0U, 2);
 #endif
 
 	return CenterPoint;

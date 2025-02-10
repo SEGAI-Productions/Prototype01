@@ -35,10 +35,17 @@ UGPCameraMode_ThirdPerson::UGPCameraMode_ThirdPerson()
 
 void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 {
+
 	UpdateForTarget(DeltaTime);
 	UpdateCrouchOffset(DeltaTime);
 
 	FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
+
+	if (View.Location == PivotLocation)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Location (%f,%f,%f) View for %s."), View.Location.X, View.Location.Y, View.Location.Z, *GetName());
+		//UE_LOG(LogTemp, Warning, TEXT("Location (%f,%f,%f) Pivot for %s."), PivotLocation.X, PivotLocation.Y, PivotLocation.Z, *GetName());
+	}
 
 	// Make sure to clamp the pitch of the controller
 	FRotator PivotRotation = GetPivotRotation();
@@ -46,7 +53,7 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	View.ControlRotation = PivotRotation;
 
 	FVector ViewLocation = PivotLocation;
-	View.Location = PivotLocation;
+	//View.Location = PivotLocation;
 	FRotator ViewRotation = PivotRotation;
 	View.Rotation = FRotator::ZeroRotator;
 	View.FieldOfView = FieldOfView;
@@ -89,7 +96,10 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 		TargetOffset.Z = 0.0f;
 	}
 
+	//UE_LOG(LogTemp, Warning, TEXT("TargetOffset (%f,%f,%f) as view location."), *GetName(), this, TargetOffset.X, TargetOffset.Y, TargetOffset.Z);
+
 	ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
+
 
 #if ENABLE_DRAW_DEBUG
 	//UWorld* World = GetWorld();
@@ -103,6 +113,7 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 
 	if (bUseAutoViewCorrection)
 	{
+		AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
 
 		if (FocusActorList.Num() > 1)
 		{
@@ -111,6 +122,11 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 			// Compute optimal camera position
 			FVector CenterPoint = CalculateOptimalCameraPosition(DeltaTime);
 
+			if (CenterPoint == FVector::Zero())
+			{
+				AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
+			}
+
 			ViewLocation = CenterPoint + (View.Rotation.Vector() * OptimalDistance * -1);
 
 			View.Location = ViewLocation;
@@ -118,11 +134,6 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 #if ENABLE_DRAW_DEBUG
 			//DrawDebugSphere(World, ViewLocation, 10, 8, FColor::Yellow, false, DeltaTime, (uint8)0U, 2);
 #endif
-
-		}
-		else
-		{
-			AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
 		}
 
 	}

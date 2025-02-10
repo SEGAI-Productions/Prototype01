@@ -23,6 +23,7 @@
 APrototypeBaseCharacter::APrototypeBaseCharacter(const class FObjectInitializer& ObjectInitializer)
 {
 	AbilityCameraMode = nullptr;
+	FallbackCameraMode = nullptr;
 	SpawnedEquipment = nullptr;
 
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -65,6 +66,11 @@ TSubclassOf<UGPCameraMode> APrototypeBaseCharacter::DetermineCameraMode() const
 	if (AbilityCameraMode)
 	{
 		return AbilityCameraMode;
+	}
+
+	if (FallbackCameraMode)
+	{
+		return FallbackCameraMode;
 	}
 
 	if (CameraComponent)
@@ -313,6 +319,22 @@ void APrototypeBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 			EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Triggered, this, &APrototypeBaseCharacter::AbilityInputPressed, Action.InputTag);
 			EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Completed, this, &APrototypeBaseCharacter::AbilityInputReleased, Action.InputTag);
 		}
+	}
+}
+
+void APrototypeBaseCharacter::SetCameraMode(TSubclassOf<UGPCameraMode> CameraMode)
+{
+	if (CameraMode)
+	{
+		FallbackCameraMode = CameraMode;
+	}
+}
+
+void APrototypeBaseCharacter::ClearCameraMode(TSubclassOf<UGPCameraMode> CameraMode)
+{
+	if (CameraMode && FallbackCameraMode == CameraMode)
+	{
+		FallbackCameraMode = nullptr;
 	}
 }
 

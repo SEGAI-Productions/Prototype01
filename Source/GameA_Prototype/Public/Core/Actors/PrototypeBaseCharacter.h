@@ -279,6 +279,12 @@ protected:
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "Camera")
+	void SetCameraMode(TSubclassOf<UGPCameraMode> CameraMode);
+
+	UFUNCTION(BlueprintCallable, Category = "Camera")
+	void ClearCameraMode(TSubclassOf<UGPCameraMode> CameraMode);
+
+	UFUNCTION(BlueprintCallable, Category = "Camera")
 	/** Overrides the camera from an active gameplay ability */
 	void SetAbilityCameraMode(TSubclassOf<UGPCameraMode> CameraMode, const FGameplayAbilitySpecHandle& OwningSpecHandle);
 
@@ -328,6 +334,9 @@ public:
 protected:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void OnDeath();
+
+	UPROPERTY()
+	TSubclassOf<UGPCameraMode> FallbackCameraMode;
 
 	/** Camera mode set by an ability. */
 	UPROPERTY()
