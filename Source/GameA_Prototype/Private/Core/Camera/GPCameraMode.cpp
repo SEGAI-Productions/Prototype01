@@ -94,6 +94,7 @@ void UGPCameraMode::UpdateCameraMode(float DeltaTime)
 {
 	UpdateView(DeltaTime);
 	UpdateBlending(DeltaTime);
+	DrawPersistentDebug();
 }
 
 void UGPCameraMode::SetFocusActor(AActor* NewFocusActor)
@@ -154,67 +155,53 @@ void UGPCameraMode::DrawDebug(UCanvas* Canvas) const
 	}
 }
 
-FVector UGPCameraMode::CalculateOptimalCameraPosition(float DeltaTime)
+uint8 UGPCameraMode::CalculateOptimalCameraOrientation(float DeltaTime, const TArray<TWeakObjectPtr<AActor>>& Actors, FVector& OutCenterPoint, float& OutOptimalDistance, const float& FOV)
 {
-	if (FocusActorList.Num() < 2) return FVector::Zero();
-
 	const AActor* TargetActor = GetTargetActor();
 	check(TargetActor);
 
 	FVector Center = TargetActor->GetActorLocation();
-	FBox Bounds(EForceInit::ForceInit);
-	//FBox Bounds(Center, Center);
+	FBox Bounds(EForceInit::ForceInit); // Initialize bounding box.
+	Bounds += Center; // Add the TargetActor's location first
 
-	// Add the TargetActor's location first
-	Bounds += Center;
-
-	for (const TWeakObjectPtr<AActor>& Enemy : FocusActorList)
+	uint8 TargetCount = 0;
+	for (const TWeakObjectPtr<AActor>& Enemy : Actors)
 	{
 		if (Enemy.IsValid())
 		{
 			Bounds += Enemy->GetActorLocation();
+			TargetCount += 1;
 		}
 	}
 
 	// Expand bounds slightly for padding
 	Bounds = Bounds.ExpandBy(200.0f);
 
-	FVector CenterPoint = Bounds.GetCenter();
-	CenterPoint.Z = GetPivotLocation().Z;
-	Bounds = Bounds.MoveTo(CenterPoint);
+	Center = Bounds.GetCenter();
+	Center.Z = GetPivotLocation().Z;
+	Bounds = Bounds.MoveTo(Center);
 
 	FVector Extents = FVector::Zero();
-	Bounds.GetCenterAndExtents(CenterPoint, Extents);
+	Bounds.GetCenterAndExtents(OutCenterPoint, Extents);
 
-	OptimalDistance = CalculateOptimalCameraDistance(CenterPoint, FieldOfView, Bounds); // 90-degree FOV
+	FVector RotationVector = View.Rotation.Vector();
+	RotationVector.Normalize();
+	FVector2D RotationVector2D(RotationVector.X, RotationVector.Y);
 
-#if ENABLE_DRAW_DEBUG
-	//UWorld* World = GetWorld();
-	
-	//DrawDebugBox(World, CenterPoint, Extents, FColor::Magenta, false, DeltaTime, (uint8)0U, 2);
+	FVector2D Offset2D = RotationVector2D * (OutOptimalDistance / 4) * -1;
+	FVector Offset(Offset2D, 0);
 
-	//DrawDebugSphere(World, CenterPoint, OptimalDistance, 20, FColor::Magenta, false, DeltaTime, (uint8)0U, 2);
-#endif
+	Bounds = Bounds.MoveTo(Center + Offset);
 
-	return CenterPoint;
+	OutOptimalDistance = CalculateOptimalCameraDistance(Bounds, Center, FOV); // FOV (Field Of View)
+
+	return TargetCount;
 }
 
-float UGPCameraMode::CalculateOptimalCameraDistance(const FVector& Center, float FOV, FBox Box) const
+float UGPCameraMode::CalculateOptimalCameraDistance(const FBox& Box, const FVector& Center, const float& FOV) const
 {
-	/*
-	float MaxDistance = 0.0f;
-
-	MaxDistance = FVector::Dist(Box.Max, Center);
-
-	for (TWeakObjectPtr<AActor> Actor : FocusActorList)
-	{
-		if (!Actor.IsValid())
-			continue;
-
-	}
-	*/
-
-	return FVector::Dist(Box.Max, Center) / FMath::Tan(FMath::DegreesToRadians(FOV / 2.0f));
+	float MaxDistance = FVector::Dist(Box.Max, Center);
+	return MaxDistance / FMath::Tan(FMath::DegreesToRadians(FOV / 2.0f));
 }
 
 FVector UGPCameraMode::GetPivotLocation() const

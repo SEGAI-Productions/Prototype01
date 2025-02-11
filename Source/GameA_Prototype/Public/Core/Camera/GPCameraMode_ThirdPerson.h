@@ -37,6 +37,7 @@ protected:
 	void PreventCameraPenetration(class AActor const& ViewTarget, FVector const& SafeLoc, FVector& CameraLoc, float const& DeltaTime, float& DistBlockedPct, bool bSingleRayOnly);
 
 	virtual void DrawDebug(UCanvas* Canvas) const override;
+	virtual void DrawPersistentDebug() override;
 
 protected:
 
@@ -117,6 +118,7 @@ public:
 
 #if ENABLE_DRAW_DEBUG
 	mutable float LastDrawDebugTime = -MAX_FLT;
+	mutable bool bWasGamePaused = false;
 #endif
 
 protected:

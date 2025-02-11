@@ -103,14 +103,15 @@ public:
 	}
 
 	virtual void DrawDebug(UCanvas* Canvas) const;
+	virtual void DrawPersistentDebug() {};
 
 protected:
 
 	/** Calculates the optimal camera position */
-	FVector CalculateOptimalCameraPosition(float DeltaTime);
+	virtual uint8 CalculateOptimalCameraOrientation(float DeltaTime, const TArray<TWeakObjectPtr<AActor>>& Actors, FVector& OutCenterPoint, float& OutOptimalDistance, const float& FOV);
 
 	/** Calculates the required distance to fit all actors */
-	virtual float CalculateOptimalCameraDistance(const FVector& Center, float FOV, FBox Box) const;
+	virtual float CalculateOptimalCameraDistance(const FBox& Box, const FVector& Center, const float& FOV) const;
 
 	virtual FVector GetPivotLocation() const;
 	virtual FRotator GetPivotRotation() const;
@@ -166,6 +167,7 @@ protected:
 	float BlendWeight;
 
 	float OptimalDistance;
+	FVector CenterPoint;
 
 	AActor* FocusActor = nullptr;
 	FName FocusSocketName;

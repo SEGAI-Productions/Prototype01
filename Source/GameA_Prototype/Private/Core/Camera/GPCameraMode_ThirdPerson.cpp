@@ -1,9 +1,14 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Core/Camera/GPCameraMode_ThirdPerson.h"
 #include "Core/Camera/GPCameraMode.h"
 #include "Components/PrimitiveComponent.h"
+
+#if ENABLE_DRAW_DEBUG
+#include "Components/LineBatchComponent.h"
+#endif
+
 #include "Curves/CurveVector.h"
 #include "Engine/Canvas.h"
 #include "Core/Camera/SegaiPenetrationAvoidanceFeeler.h"
@@ -16,6 +21,8 @@
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GPCameraMode_ThirdPerson)
 
 #define GAME_PAUSED (GetWorld() && GetWorld()->IsPaused())
+#define PLAYER_EJECTED (GetWorld()->GetFirstPlayerController() && GetWorld()->GetFirstPlayerController()->GetPawn() == nullptr)
+#define SHOW_DEBUG_CAMERA (GetWorld()->GetFirstPlayerController() && GetWorld()->GetFirstPlayerController()->IsShowDebugEnabled(TEXT("Camera")))
 
 namespace GPCameraMode_ThirdPerson_Statics
 {
@@ -43,12 +50,6 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 
 	FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
 
-	if (View.Location == PivotLocation)
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("Location (%f,%f,%f) View for %s."), View.Location.X, View.Location.Y, View.Location.Z, *GetName());
-		//UE_LOG(LogTemp, Warning, TEXT("Location (%f,%f,%f) Pivot for %s."), PivotLocation.X, PivotLocation.Y, PivotLocation.Z, *GetName());
-	}
-
 	// Make sure to clamp the pitch of the controller
 	FRotator PivotRotation = GetPivotRotation();
 	PivotRotation.Pitch = FMath::ClampAngle(PivotRotation.Pitch, ViewPitchMin, ViewPitchMax);
@@ -60,11 +61,8 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	View.Rotation = FRotator::ZeroRotator;
 	View.FieldOfView = FieldOfView;
 
-#pragma region CameraLag
-
 	UpdateCameraLag(DeltaTime, PivotLocation, PivotRotation);
 
-#pragma endregion
 
 	// Apply third person offset using pitch.
 	if (!bUseRuntimeFloatCurves)
@@ -103,9 +101,6 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	ViewLocation = PivotLocation + PivotRotation.RotateVector(TargetOffset);
 
 
-#if ENABLE_DRAW_DEBUG
-	//DrawDebugSphere(World, ViewLocation, 10, 8, FColor::Green);
-#endif
 
 	View.Location = ViewLocation;
 	View.Rotation = PivotRotation;
@@ -121,28 +116,21 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 			FCollisionShape SphereShape = FCollisionShape::MakeSphere(8.f);
 
 			// Compute optimal camera position
-			FVector CenterPoint = CalculateOptimalCameraPosition(DeltaTime);
-
-			if (CenterPoint == FVector::Zero())
+			if (CalculateOptimalCameraOrientation(DeltaTime, FocusActorList, CenterPoint, OptimalDistance, FieldOfView) > 1)
 			{
-				AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
+				ViewLocation = CenterPoint + (View.Rotation.Vector() * OptimalDistance * -1);
 			}
-
-			ViewLocation = CenterPoint + (View.Rotation.Vector() * OptimalDistance * -1);
-
-			View.Location = ViewLocation;
-
-#if ENABLE_DRAW_DEBUG
-			UWorld* World = GetWorld();
-			DrawDebugSphere(World, CenterPoint, OptimalDistance, 8, FColor::Yellow, GAME_PAUSED);
-#endif
 		}
-
 	}
+
+	View.Location = ViewLocation;
 
 	// Adjust final desired camera location to prevent any penetration
 	UpdatePreventPenetration(DeltaTime);
+
 	View.Rotation = PivotRotation;
+
+	DrawPersistentDebug();
 }
 
 FVector UGPCameraMode_ThirdPerson::GetFocusLocation()
@@ -582,9 +570,27 @@ void UGPCameraMode_ThirdPerson::DrawDebug(UCanvas* Canvas) const
 		FString::Printf(TEXT("Adjusted Target Actors Angle: %f")
 			, AdjustedAngle));
 
-	DrawDebugSphere(GetWorld(), View.Location, 25, 12, FColor::White, GAME_PAUSED);
-
 	LastDrawDebugTime = GetWorld()->GetTimeSeconds();
+#endif
+}
+
+void UGPCameraMode_ThirdPerson::DrawPersistentDebug()
+{
+#if ENABLE_DRAW_DEBUG
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	if (bWasGamePaused && !GAME_PAUSED)
+	{
+		// The game was paused but is now unpaused → Clear persistent debug lines
+		World->PersistentLineBatcher->Flush();
+	}
+
+	DrawDebugSphere(World, View.Location, 25, 12, FColor::White, GAME_PAUSED);
+	DrawDebugSphere(World, CenterPoint, OptimalDistance, 8, FColor::Yellow, GAME_PAUSED);
+
+	// Store the current pause state for next frame
+	bWasGamePaused = GAME_PAUSED;
 #endif
 }
 
