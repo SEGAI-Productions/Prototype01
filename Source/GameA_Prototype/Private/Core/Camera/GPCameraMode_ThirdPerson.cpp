@@ -15,6 +15,8 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GPCameraMode_ThirdPerson)
 
+#define GAME_PAUSED (GetWorld() && GetWorld()->IsPaused())
+
 namespace GPCameraMode_ThirdPerson_Statics
 {
 	static const FName NAME_IgnoreCameraCollision = TEXT("IgnoreCameraCollision");
@@ -102,7 +104,6 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 
 
 #if ENABLE_DRAW_DEBUG
-	//UWorld* World = GetWorld();
 	//DrawDebugSphere(World, ViewLocation, 10, 8, FColor::Green);
 #endif
 
@@ -114,7 +115,7 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	if (bUseAutoViewCorrection)
 	{
 		AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
-
+		//UE_LOG(LogTemp, Warning, TEXT("%s: %p"), *GetName(), this);
 		if (FocusActorList.Num() > 1)
 		{
 			FCollisionShape SphereShape = FCollisionShape::MakeSphere(8.f);
@@ -132,7 +133,8 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 			View.Location = ViewLocation;
 
 #if ENABLE_DRAW_DEBUG
-			//DrawDebugSphere(World, ViewLocation, 10, 8, FColor::Yellow, false, DeltaTime, (uint8)0U, 2);
+			UWorld* World = GetWorld();
+			DrawDebugSphere(World, CenterPoint, OptimalDistance, 8, FColor::Yellow, GAME_PAUSED);
 #endif
 		}
 
@@ -579,6 +581,8 @@ void UGPCameraMode_ThirdPerson::DrawDebug(UCanvas* Canvas) const
 	DisplayDebugManager.DrawString(
 		FString::Printf(TEXT("Adjusted Target Actors Angle: %f")
 			, AdjustedAngle));
+
+	DrawDebugSphere(GetWorld(), View.Location, 25, 12, FColor::White, GAME_PAUSED);
 
 	LastDrawDebugTime = GetWorld()->GetTimeSeconds();
 #endif

@@ -17,6 +17,7 @@ struct FMinimalViewInfo;
 template <class TClass> class TSubclassOf;
 
 DECLARE_DELEGATE_RetVal(TSubclassOf<UGPCameraMode>, FGPCameraModeDelegate);
+DECLARE_DELEGATE_RetVal(TArray<TWeakObjectPtr<AActor>>, FGPCameraFocusActorsDelegate);
 
 /**
  * 
@@ -41,9 +42,6 @@ public:
 	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraMode, AActor* NewFocusObject);
 
 	UFUNCTION(BlueprintCallable)
-	void SetFocusObjectList(TSubclassOf<UGPCameraMode> CameraMode, const TArray<AActor*>& NewFocusList);
-
-	UFUNCTION(BlueprintCallable)
 	void SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraMode, UCurveVector* DynamicOffset);
 
 	UFUNCTION(BlueprintCallable)
@@ -54,6 +52,9 @@ public:
 
 	// Delegate used to query for the best camera mode.
 	FGPCameraModeDelegate DetermineCameraModeDelegate;
+
+	// Delegate used to query for latest focus actors.
+	FGPCameraFocusActorsDelegate RetreiveCameraFocusActorsDelegate;
 
 	// Add an offset to the field of view.  The offset is only for one frame, it gets cleared once it is applied.
 	void AddFieldOfViewOffset(float FovOffset) { FieldOfViewOffset += FovOffset; }

@@ -74,6 +74,7 @@ public:
 protected:
 
 	TSubclassOf<UGPCameraMode> DetermineCameraMode() const;
+	TArray<TWeakObjectPtr<AActor>> RetreiveCameraFocusActors() const;
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	void AddStartupGameplayAbilities();
@@ -276,7 +277,12 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 
+	TArray<TWeakObjectPtr<AActor>> GetFocusActors() const;
+
 public:
+
+	UFUNCTION(BlueprintCallable, Category = "Camera")
+	void SetCameraFocusActors(const TArray<AActor*>& FocusActors);
 
 	UFUNCTION(BlueprintCallable, Category = "Camera")
 	void SetCameraMode(TSubclassOf<UGPCameraMode> CameraMode);
@@ -344,4 +350,6 @@ protected:
 
 	/** Spec handle for the last ability to set a camera mode. */
 	FGameplayAbilitySpecHandle AbilityCameraModeOwningSpecHandle;
+
+	TArray<TWeakObjectPtr<AActor>> FocusActors;
 };

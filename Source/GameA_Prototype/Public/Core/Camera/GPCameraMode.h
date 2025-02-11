@@ -73,7 +73,7 @@ public:
 	UGPCameraMode();
 
 	/** Sets the list of enemy characters */
-	virtual void SetFocusList(const TArray<TSoftObjectPtr<AActor>>& NewList);
+	virtual void SetFocusList(const TArray<TWeakObjectPtr<AActor>>& NewList);
 
 	UGPCameraComponent* GetGPCameraComponent() const;
 
@@ -120,8 +120,8 @@ protected:
 
 protected:
 	/** List of enemies */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Transient, Category = "Tracking")
-	TArray<TSoftObjectPtr<AActor>> FocusActorList;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Transient, Category = "Tracking")
+	TArray<TWeakObjectPtr<AActor>> FocusActorList;
 
 	// A tag that can be queried by gameplay code that cares when a kind of camera mode is active
 	// without having to ask about a specific mode (e.g., when aiming downsights to get more accuracy)
@@ -262,7 +262,7 @@ public:
 	// Gets the tag associated with the top layer and the blend weight of it
 	void GetBlendInfo(float& OutWeightOfTopLayer, FGameplayTag& OutTagOfTopLayer) const;
 	void SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeClass, AActor* NewFocusObject);
-	void SetFocusList(TSubclassOf<UGPCameraMode> CameraModeClass, const TArray<TSoftObjectPtr<AActor>>& NewActorList);
+	void UpdateCameraFocusActors(TSubclassOf<UGPCameraMode> CameraModeClass, const TArray<TWeakObjectPtr<AActor>>& NewActorList);
 	void SetDynamicOffsetCurve(TSubclassOf<UGPCameraMode> CameraMode, TObjectPtr<UCurveVector> DynamicOffset);
 	void FocusSocketByName(TSubclassOf<UGPCameraMode> CameraMode, FName FocusSocket);
 
@@ -276,6 +276,8 @@ protected:
 protected:
 
 	bool bIsActive;
+
+	TArray<TWeakObjectPtr<AActor>> FocusActors;
 
 	UPROPERTY()
 	TArray<TObjectPtr<UGPCameraMode>> CameraModeInstances;

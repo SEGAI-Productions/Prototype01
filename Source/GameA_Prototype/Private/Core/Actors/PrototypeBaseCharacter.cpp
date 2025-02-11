@@ -35,6 +35,7 @@ APrototypeBaseCharacter::APrototypeBaseCharacter(const class FObjectInitializer&
 	CameraComponent = CreateDefaultSubobject<UGPCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetRelativeLocation(FVector(-300.0f, 0.0f, 75.0f));
 	CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &APrototypeBaseCharacter::DetermineCameraMode);
+	CameraComponent->RetreiveCameraFocusActorsDelegate.BindUObject(this, &APrototypeBaseCharacter::RetreiveCameraFocusActors);
 
 	AbilitySystemComponent = CreateDefaultSubobject<UPrototypeAbilitySystemComponent>(TEXT("Ability System"));
 
@@ -79,6 +80,11 @@ TSubclassOf<UGPCameraMode> APrototypeBaseCharacter::DetermineCameraMode() const
 	}
 
 	return nullptr;
+}
+
+TArray<TWeakObjectPtr<AActor>> APrototypeBaseCharacter::RetreiveCameraFocusActors() const
+{
+	return FocusActors;
 }
 
 UAbilitySystemComponent* APrototypeBaseCharacter::GetAbilitySystemComponent() const
@@ -318,6 +324,21 @@ void APrototypeBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 
 			EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Triggered, this, &APrototypeBaseCharacter::AbilityInputPressed, Action.InputTag);
 			EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Completed, this, &APrototypeBaseCharacter::AbilityInputReleased, Action.InputTag);
+		}
+	}
+}
+
+void APrototypeBaseCharacter::SetCameraFocusActors(const TArray<AActor*>& NewFocusActors)
+{
+	FocusActors.Reset();
+
+	TArray<TWeakObjectPtr<AActor>> WeakFocusActorList;
+
+	for (AActor* Actor : NewFocusActors)
+	{
+		if (IsValid(Actor))  // Ensure the actor is valid before converting
+		{
+			FocusActors.Add(Actor);
 		}
 	}
 }
@@ -659,4 +680,9 @@ void APrototypeBaseCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * TurnRateGamepad * GetWorld()->GetDeltaSeconds());
+}
+
+TArray<TWeakObjectPtr<AActor>> APrototypeBaseCharacter::GetFocusActors() const
+{
+	return FocusActors;
 }

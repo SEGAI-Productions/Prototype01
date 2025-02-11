@@ -66,8 +66,10 @@ UGPCameraMode::UGPCameraMode()
 	BlendWeight = 1.0f;
 }
 
-void UGPCameraMode::SetFocusList(const TArray<TSoftObjectPtr<AActor>>& NewList)
+void UGPCameraMode::SetFocusList(const TArray<TWeakObjectPtr<AActor>>& NewList)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("%s: %p"), *GetName(), this);
+	FocusActorList.Reset();
 	FocusActorList = NewList;
 }
 
@@ -160,11 +162,15 @@ FVector UGPCameraMode::CalculateOptimalCameraPosition(float DeltaTime)
 	check(TargetActor);
 
 	FVector Center = TargetActor->GetActorLocation();
-	FBox Bounds(Center, Center);
+	FBox Bounds(EForceInit::ForceInit);
+	//FBox Bounds(Center, Center);
 
-	for (TSoftObjectPtr<AActor> Enemy : FocusActorList)
+	// Add the TargetActor's location first
+	Bounds += Center;
+
+	for (const TWeakObjectPtr<AActor>& Enemy : FocusActorList)
 	{
-		if (Enemy)
+		if (Enemy.IsValid())
 		{
 			Bounds += Enemy->GetActorLocation();
 		}
@@ -195,17 +201,20 @@ FVector UGPCameraMode::CalculateOptimalCameraPosition(float DeltaTime)
 
 float UGPCameraMode::CalculateOptimalCameraDistance(const FVector& Center, float FOV, FBox Box) const
 {
+	/*
 	float MaxDistance = 0.0f;
 
-	for (TSoftObjectPtr<AActor> Actor : FocusActorList)
+	MaxDistance = FVector::Dist(Box.Max, Center);
+
+	for (TWeakObjectPtr<AActor> Actor : FocusActorList)
 	{
-		if (!Actor)
+		if (!Actor.IsValid())
 			continue;
 
-		MaxDistance = FVector::Dist(Box.Max, Center);
 	}
+	*/
 
-	return MaxDistance / FMath::Tan(FMath::DegreesToRadians(FOV / 2.0f));
+	return FVector::Dist(Box.Max, Center) / FMath::Tan(FMath::DegreesToRadians(FOV / 2.0f));
 }
 
 FVector UGPCameraMode::GetPivotLocation() const
@@ -432,6 +441,19 @@ void UGPCameraModeStack::DeactivateStack()
 	}
 }
 
+void UGPCameraModeStack::UpdateCameraFocusActors(TSubclassOf<UGPCameraMode> CameraModeClass, const TArray<TWeakObjectPtr<AActor>>& NewActorList)
+{
+	if (!CameraModeClass)
+	{
+		return;
+	}
+
+	UGPCameraMode* CameraMode = GetCameraModeInstance(CameraModeClass);
+	check(CameraMode);
+
+	CameraMode->SetFocusList(NewActorList);
+}
+
 void UGPCameraModeStack::PushCameraMode(TSubclassOf<UGPCameraMode> CameraModeClass)
 {
 	if (!CameraModeClass)
@@ -641,16 +663,6 @@ void UGPCameraModeStack::SetFocusObject(TSubclassOf<UGPCameraMode> CameraModeCla
 	if (cameraMode)
 	{
 		cameraMode->SetFocusActor(NewFocusObject);
-	}
-}
-
-void UGPCameraModeStack::SetFocusList(TSubclassOf<UGPCameraMode> CameraModeClass, const TArray<TSoftObjectPtr<AActor>>& NewActorList)
-{
-	UGPCameraMode* cameraMode = GetCameraModeInstance(CameraModeClass);
-
-	if (cameraMode)
-	{
-		cameraMode->SetFocusList(NewActorList);
 	}
 }
 
