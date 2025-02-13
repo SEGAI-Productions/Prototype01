@@ -79,7 +79,7 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 			if (FocusActor && bUseAutoViewCorrection)
 			{
 				TargetOffset.Y += 60.0f * (TargetOffset.Y / TargetOffset.Y);
-				TargetOffset.Z += 100.0f * (TargetOffset.Z / TargetOffset.Z);
+				//TargetOffset.Z += 100.0f * (TargetOffset.Z / TargetOffset.Z);
 			}
 		}
 	}
@@ -105,21 +105,25 @@ void UGPCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 	View.Location = ViewLocation;
 	View.Rotation = PivotRotation;
 
-	FVector FocusLocation = GetFocusLocation();
+	//UE_LOG(LogTemp, Warning, TEXT("%s: Offset: %f - Camera: %f"), *GetName(), TargetOffset.Z, View.Location.Z);
 
 	if (bUseAutoViewCorrection)
 	{
-		AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
-		//UE_LOG(LogTemp, Warning, TEXT("%s: %p"), *GetName(), this);
+
 		if (FocusActorList.Num() > 1)
 		{
-			FCollisionShape SphereShape = FCollisionShape::MakeSphere(8.f);
+			//FCollisionShape SphereShape = FCollisionShape::MakeSphere(8.f);
 
 			// Compute optimal camera position
 			if (CalculateOptimalCameraOrientation(DeltaTime, FocusActorList, CenterPoint, OptimalDistance, FieldOfView) > 1)
 			{
 				ViewLocation = CenterPoint + (View.Rotation.Vector() * OptimalDistance * -1);
 			}
+		}
+		else
+		{
+			FVector FocusLocation = GetFocusLocation();
+			AdjustCameraIfNecessary(PivotLocation, FocusLocation, ViewLocation, DeltaTime);
 		}
 	}
 
