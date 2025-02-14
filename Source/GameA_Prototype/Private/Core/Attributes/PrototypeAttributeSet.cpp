@@ -15,6 +15,7 @@ void UPrototypeAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(UPrototypeAttributeSet, MaxHealth);
 	DOREPLIFETIME(UPrototypeAttributeSet, Health);
+	DOREPLIFETIME(UPrototypeAttributeSet, Stamina);
 	DOREPLIFETIME(UPrototypeAttributeSet, AttackWeight);
 }
 
@@ -121,4 +122,9 @@ void UPrototypeAttributeSet::OnRep_Health(const FGameplayAttributeData& OldValue
 void UPrototypeAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldValue)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UPrototypeAttributeSet, MaxHealth, OldValue);
+}
+
+void UPrototypeAttributeSet::OnRep_Stamina(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UPrototypeAttributeSet, Stamina, OldValue);
 }
