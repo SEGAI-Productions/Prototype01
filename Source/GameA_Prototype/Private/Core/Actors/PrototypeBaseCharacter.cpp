@@ -595,8 +595,11 @@ void APrototypeBaseCharacter::OnReflexChangedInternal(const FOnAttributeChangeDa
 void APrototypeBaseCharacter::OnXPChangedInternal(const FOnAttributeChangeData& Data)
 {
 	const FGameplayEffectModCallbackData& data = *Data.GEModData;
-	const FGameplayTagContainer& SourceTags = *data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
-	OnXPChanged(Data.OldValue, SourceTags);
+	if (&data != nullptr)
+	{
+		const FGameplayTagContainer& SourceTags = *data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
+		OnXPChanged(Data.OldValue, SourceTags);
+	}
 }
 
 void APrototypeBaseCharacter::Input_Move(const FInputActionValue& InputActionValue)
